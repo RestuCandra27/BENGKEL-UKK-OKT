@@ -3,21 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pelanggan;
-use App\Models\User;
+// PERBAIKAN: Kita HANYA butuh Model User.
+use App\Models\User; 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class PelangganController extends Controller
 {
     /**
      * Menampilkan halaman daftar pelanggan.
+     * Logika ini JAUH LEBIH SEDERHANA.
      */
     public function index()
     {
-        // Ambil semua data pelanggan beserta data user terkait
-         $pelanggans = Pelanggan::with('user')->paginate(10); 
+        // PERBAIKAN: Cukup ambil dari tabel 'users' dimana role='pelanggan'
+        $pelanggans = User::where('role', 'pelanggan')
+                           ->orderBy('nama', 'asc')
+                           ->paginate(10); 
 
         return view('admin.pelanggan.index', compact('pelanggans'));
     }
@@ -32,48 +35,100 @@ class PelangganController extends Controller
 
     /**
      * Menyimpan data pelanggan baru ke database.
+     * Logika ini JAUH LEBIH SEDERHANA.
      */
     public function store(Request $request)
     {
         // 1. Validasi input
         $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:User,email'],
+            // PERBAIKAN: Validasi ke tabel 'users'
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'], 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'no_hp' => ['nullable', 'string', 'max:20'],
             'alamat' => ['nullable', 'string'],
             'jenis_member' => ['required', 'in:Reguler,VIP,Fleet'],
         ]);
 
-        // 2. Gunakan Database Transaction untuk keamanan
-        DB::beginTransaction();
-        try {
-            // Buat data di tabel User terlebih dahulu
-            $user = User::create([
-                'nama' => $request->nama,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => 'pelanggan', // Otomatis set role sebagai pelanggan
-            ]);
-
-            // Kemudian, buat data di tabel Pelanggan menggunakan ID dari user baru
-            Pelanggan::create([
-                'id_user' => $user->id_user,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jenis_member' => $request->jenis_member,
-            ]);
-
-            DB::commit(); // Jika semua berhasil, simpan perubahan
-
-        } catch (\Exception $e) {
-            DB::rollBack(); // Jika ada error, batalkan semua proses
-            // Kembali ke halaman form dengan pesan error umum
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'])->withInput();
-        }
+        // 2. Simpan ke SATU TABEL. Tidak perlu Transaction.
+        User::create([
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'pelanggan', // Otomatis set role
+            
+            // Simpan data profil langsung ke tabel 'users'
+            'no_hp' => $request->no_hp,
+            'alamat' => $request->alamat,
+            'jenis_member' => $request->jenis_member,
+            // (Anda bisa tambahkan kolom lain dari migrasi 'users' kita di sini)
+        ]);
         
-        // 3. Redirect ke halaman daftar pelanggan dengan pesan sukses
+        // 3. Redirect
         return redirect()->route('admin.pelanggan.index')->with('success', 'Pelanggan baru berhasil ditambahkan.');
     }
-}
 
+    /**
+     * (Fungsi Baru) Menampilkan form untuk mengedit pelanggan.
+     * Kita menggunakan Route-Model Binding. 'User $pelanggan' akan error
+     * karena nama parameternya 'pelanggan'. Kita perbaiki di bawah.
+     */
+    public function edit($id) // Terima $id dari rute
+    {
+        $pelanggan = User::where('id', $id)->where('role', 'pelanggan')->firstOrFail();
+        return view('admin.pelanggan.edit', compact('pelanggan'));
+    }
+
+    /**
+     * (Fungsi Baru) Mengupdate data pelanggan di database.
+     */
+    public function update(Request $request, $id) // Terima $id dari rute
+    {
+        $pelanggan = User::where('id', $id)->where('role', 'pelanggan')->firstOrFail();
+
+        // 1. Validasi input
+        $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            // PERBAIKAN: Validasi unik dengan 'ignore' ke primary key 'id'
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($pelanggan->id)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'], // Password boleh kosong saat update
+            'no_hp' => ['nullable', 'string', 'max:20'],
+            'alamat' => ['nullable', 'string'],
+            'jenis_member' => ['required', 'in:Reguler,VIP,Fleet'],
+        ]);
+
+        // 2. Update data
+        $pelanggan->nama = $request->nama;
+        $pelanggan->email = $request->email;
+        $pelanggan->no_hp = $request->no_hp;
+        $pelanggan->alamat = $request->alamat;
+        $pelanggan->jenis_member = $request->jenis_member;
+
+        // Logika update password (jika diisi)
+        if ($request->filled('password')) {
+            $pelanggan->password = Hash::make($request->password);
+        }
+        
+        $pelanggan->save();
+        
+        // 3. Redirect
+        return redirect()->route('admin.pelanggan.index')->with('success', 'Data pelanggan berhasil diperbarui.');
+    }
+
+    /**
+     * (Fungsi Baru) Menghapus data pelanggan dari database.
+     */
+    public function destroy($id) // Terima $id dari rute
+    {
+        $pelanggan = User::where('id', $id)->where('role', 'pelanggan')->firstOrFail();
+        
+        // Tambahan keamanan: jangan hapus pelanggan jika masih punya data servis
+        // if ($pelanggan->servis()->count() > 0) {
+        //     return back()->with('error', 'Tidak bisa menghapus pelanggan yang masih memiliki riwayat servis.');
+        // }
+
+        $pelanggan->delete();
+
+        return redirect()->route('admin.pelanggan.index')->with('success', 'Data pelanggan berhasil dihapus.');
+    }
+}

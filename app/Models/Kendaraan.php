@@ -9,15 +9,22 @@ class Kendaraan extends Model
 {
     use HasFactory;
 
-    protected $table = 'Kendaraan';
-    protected $primaryKey = 'id_kendaraan';
-    public $timestamps = false;
+    protected $table = 'kendaraans'; // Sesuai migrasi kita
 
-    /**
-     * Mendapatkan user pemilik kendaraan ini.
-     */
-    public function pemilik()
+    protected $fillable = [
+        'user_id',      // ID Pelanggan (Pemilik)
+        'no_polisi',
+        'merek',
+        'model',
+        'tahun',
+        'warna',
+        'nomor_rangka',
+        'nomor_mesin',
+    ];
+
+    // Relasi: Kendaraan ini milik satu User (Pelanggan)
+    public function user()
     {
-        return $this->belongsTo(User::class, 'id_user', 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

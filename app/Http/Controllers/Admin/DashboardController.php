@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $jumlahPelanggan = User::where('role', 'pelanggan')->count();
         $jumlahMontir = User::where('role', 'montir')->count();
         $servisHariIni = Servis::whereDate('tanggal_servis', today())->count();
-        $invoiceBelumLunas = Invoice::where('status', 'belum_dibayar')->count();
+        $invoiceBelumLunas = Invoice::where('status_pembayaran', 'Belum Lunas')->count();
 
         // Kirim semua data ke view. Ingat, lokasinya sekarang di 'admin.dashboard'
         return view('admin.dashboard', [

@@ -9,18 +9,16 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('Layanan', function (Blueprint $table) {
-            $table->id('id_layanan');
+        Schema::create('layanans', function (Blueprint $table) {
+            $table->id(); 
             $table->string('nama_layanan', 100);
             $table->decimal('biaya_standar', 15, 2);
+            $table->text('deskripsi')->nullable();
+            $table->timestamps();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('layanans');

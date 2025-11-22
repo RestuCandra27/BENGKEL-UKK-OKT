@@ -9,7 +9,6 @@ class Invoice extends Model
 {
     use HasFactory;
 
-    protected $table = 'Invoice';
     protected $primaryKey = 'id_invoice';
 
     /**

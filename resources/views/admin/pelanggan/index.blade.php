@@ -1,35 +1,31 @@
-{{-- Menggunakan layout utama 'app.blade.php'. Semua konten di dalam sini akan dimasukkan ke dalam '{{ $slot }}' di file layout. --}}
+{{-- Menggunakan layout utama 'app.blade.php'. --}}
 <x-app-layout>
-    {{-- Mendefinisikan konten untuk bagian 'header' di layout utama. Ini akan menjadi judul halaman. --}}
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Data Pelanggan') }}
-        </h2>
+        {{-- PERBAIKAN: Memindahkan tombol "Tambah" ke header, sama seperti di Manajemen User --}}
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight mb-0">
+                {{ __('Data Pelanggan') }}
+            </h2>
+            <a href="{{ route('admin.pelanggan.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Tambah Pelanggan
+            </a>
+        </div>
     </x-slot>
 
-    {{-- BLOK UNTUK MENAMPILKAN PESAN SUKSES --}}
-    {{-- @if (session('success')): Logika Blade untuk mengecek "Apakah ada pesan 'success' yang dikirim dari controller (misalnya setelah berhasil menambah data)?" --}}
     @if (session('success'))
         <div class="alert alert-success">
-            {{-- Menampilkan isi pesan 'success' --}}
             {{ session('success') }}
         </div>
     @endif
-
-    {{-- 'card' adalah class dari AdminLTE untuk membuat kotak konten utama. --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Daftar Semua Pelanggan</h3>
-            {{-- 'card-tools' adalah class AdminLTE untuk menempatkan elemen (seperti tombol) di pojok kanan atas card-header. --}}
-            <div class="card-tools">
-                {{-- Tombol ini mengarah ke rute yang bernama 'admin.pelanggan.create' untuk menampilkan form tambah pelanggan. --}}
-                <a href="{{ route('admin.pelanggan.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Tambah Pelanggan
-                </a>
-            </div>
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
         </div>
+    @endif
+
+    <div class="card">
+        {{-- PERBAIKAN: Menghapus card-header karena tombol sudah pindah ke atas --}}
         <div class="card-body">
-            {{-- Class 'table', 'table-bordered', 'table-hover' adalah dari Bootstrap/AdminLTE untuk membuat tabel terlihat bagus. --}}
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -38,30 +34,43 @@
                         <th>Email</th>
                         <th>No. HP</th>
                         <th>Jenis Member</th>
+                        <th>Aksi</th> {{-- PERBAIKAN: Menambahkan kolom Aksi --}}
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- @foreach: Perintah Blade untuk melakukan perulangan. Ia akan mengulang untuk setiap item di dalam variabel '$pelanggans' yang dikirim dari PelangganController. --}}
                     @foreach ($pelanggans as $pelanggan)
                     <tr>
-                        {{-- '$loop->iteration' adalah variabel khusus Blade yang otomatis menghasilkan nomor urut (1, 2, 3, ...) untuk setiap perulangan. --}}
                         <td>{{ $loop->iteration }}</td>
-                        {{-- '$pelanggan->user->nama': Ini adalah keajaiban relasi Eloquent. Kita bisa mengakses data 'nama' dari tabel 'User' yang terhubung dengan data pelanggan ini. --}}
-                        <td>{{ $pelanggan->user->nama }}</td>
-                        <td>{{ $pelanggan->user->email }}</td>
-                        {{-- '$pelanggan->no_hp ?? '-'': Tanda '??' (Null Coalescing Operator) artinya "jika $pelanggan->no_hp ada isinya, tampilkan isinya. Jika tidak ada (NULL), tampilkan tanda strip '-'". --}}
+                        
+                        {{-- PERBAIKAN: Hapus ->user. Ambil data langsung dari $pelanggan --}}
+                        <td>{{ $pelanggan->nama }}</td>
+                        <td>{{ $pelanggan->email }}</td>
+                        
+                        {{-- Kode ini sudah benar --}}
                         <td>{{ $pelanggan->no_hp ?? '-' }}</td>
-                        {{-- 'badge' dan 'bg-primary' adalah class dari AdminLTE untuk membuat label 'jenis_member' terlihat lebih menarik. --}}
                         <td><span class="badge bg-primary">{{ $pelanggan->jenis_member }}</span></td>
+
+                        {{-- PERBAIKAN: Menambahkan tombol Aksi (Edit & Hapus) --}}
+                        <td>
+                            <a href="{{ route('admin.pelanggan.edit', $pelanggan->id) }}" class="btn btn-sm btn-info">Edit</a>
+                            
+                            <form action="{{ route('admin.pelanggan.destroy', $pelanggan->id) }}" method="POST" class="inline-block">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')">
+                                    Hapus
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
         <div class="card-footer clearfix">
-            {{-- '{{ $pelanggans->links() }}': Perintah Blade yang sangat kuat. Jika Anda menggunakan paginate() di controller, perintah ini akan secara otomatis membuat link nomor halaman (1, 2, 3, ...) yang sudah di-styling dengan benar. --}}
+            {{-- Link paginasi ini sudah benar --}}
             {{ $pelanggans->links() }}
         </div>
     </div>
 </x-app-layout>
-

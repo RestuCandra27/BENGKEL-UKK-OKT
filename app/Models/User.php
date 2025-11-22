@@ -2,33 +2,50 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail; // Aktifkan jika Anda butuh verifikasi email
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable // implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
-    protected $table = 'User';
-    protected $primaryKey = 'id_user';
+    /**
+     * PERBAIKAN: Kita HAPUS $table dan $primaryKey.
+     * Dengan menghapusnya, Laravel akan otomatis menggunakan konvensi
+     * (tabel 'users' dan primary key 'id'), yang sudah kita perbaiki.
+     */
+    // protected $table = 'User'; <-- HAPUS
+    // protected $primaryKey = 'id_user'; <-- HAPUS
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
+     * PERBAIKAN: $fillable diperbarui dengan SEMUA kolom
+     * dari migrasi 'users' baru kita.
      */
     protected $fillable = [
         'nama',
         'email',
         'password',
         'role',
+        'no_hp',
+        'alamat',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'pekerjaan',
+        'jenis_member',
+        'poin_loyalitas',
+        'kode_montir',
+        'spesialisasi',
+        'level',
+        'tanggal_bergabung',
+        'kontak_darurat_nama',
+        'kontak_darurat_nomor',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
+     * (Ini sudah benar)
      */
     protected $hidden = [
         'password',
@@ -37,8 +54,7 @@ class User extends Authenticatable
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * (Ini sudah benar, 'email_verified_at' ditambahkan)
      */
     protected function casts(): array
     {
@@ -48,26 +64,37 @@ class User extends Authenticatable
         ];
     }
 
-    // --- Relasi ---
+    // --- PERBAIKAN: Relasi ---
 
-    public function pelanggan()
+    /**
+     * PERBAIKAN: Relasi 'pelanggan' dan 'montir' DIHAPUS
+     * karena datanya sudah ada di model 'User' ini.
+     */
+    // public function pelanggan() { ... } <-- HAPUS
+    // public function montir() { ... } <-- HAPUS
+
+    /**
+     * PERBAIKAN: Relasi 'kendaraan' (sebagai pelanggan)
+     * Laravel akan otomatis mencari 'user_id' (sesuai konvensi baru kita).
+     */
+    public function kendaraans() // Nama dibuat jamak
     {
-        return $this->hasOne(Pelanggan::class, 'id_user', 'id_user');
+        return $this->hasMany(Kendaraan::class, 'user_id');
     }
 
-    public function montir()
+    /**
+     * PERBAIKAN: Relasi 'servis' (sebagai pelanggan)
+     */
+    public function servis_sebagai_pelanggan()
     {
-        return $this->hasOne(Montir::class, 'id_user', 'id_user');
+        return $this->hasMany(Servis::class, 'user_id');
     }
 
-    public function kendaraan()
+    /**
+     * PERBAIKAN: Relasi 'servis' (sebagai montir)
+     */
+    public function servis_sebagai_montir()
     {
-        return $this->hasMany(Kendaraan::class, 'id_user', 'id_user');
-    }
-
-    public function servis()
-    {
-        return $this->hasMany(Servis::class, 'id_user', 'id_user');
+        return $this->hasMany(Servis::class, 'montir_id');
     }
 }
-

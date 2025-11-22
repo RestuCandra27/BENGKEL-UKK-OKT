@@ -14,14 +14,28 @@ class HomeController extends Controller
     {
         $role = Auth::user()->role;
 
-        if ($role == 'admin' || $role == 'montir' || $role == 'kasir') {
-            // Jika user adalah admin, montir, atau kasir, arahkan ke dashboard admin
+        // PERBAIKAN: Pisahkan setiap role ke dashboard-nya sendiri
+        
+        if ($role == 'admin') {
+            // Admin ke admin.dashboard
             return redirect()->route('admin.dashboard');
+        
+        } elseif ($role == 'montir') {
+            // Montir ke montir.dashboard
+            // (Pastikan Anda sudah membuat rute ini di web.php)
+            return redirect()->route('montir.dashboard'); // INI DIPERBAIKI
+
+        } elseif ($role == 'kasir') {
+            // Kasir ke kasir.dashboard
+            // (Pastikan Anda sudah membuat rute ini di web.php)
+            return redirect()->route('kasir.dashboard'); // INI DIPERBAIKI
+        
         } elseif ($role == 'pelanggan') {
-            // Jika user adalah pelanggan, arahkan ke dashboard pelanggan
+            // Pelanggan ke pelanggan.dashboard
             return redirect()->route('pelanggan.dashboard');
+        
         } else {
-            // Sebagai cadangan jika ada peran lain, arahkan ke halaman utama
+            // Fallback
             return redirect('/');
         }
     }

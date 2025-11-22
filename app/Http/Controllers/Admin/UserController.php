@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller; // <-- Ini juga penting di sini
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +15,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::where('role', '!=', 'pelanggan')->orderBy('created_at', 'desc')->get();
+        // Logika ini sudah bagus
+        $users = User::where('role', '!=', 'pelanggan')->orderBy('nama', 'asc')->get();
         return view('admin.users.index', ['users' => $users]);
     }
 
@@ -34,9 +35,12 @@ class UserController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:User,email',
+            // PERBAIKAN: Validasi ke tabel 'users'
+            'email' => 'required|string|email|max:255|unique:users,email', 
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,montir,kasir',
+            // Tambahkan validasi untuk data montir jika rolenya montir
+            'kode_montir' => Rule::requiredIf($request->role == 'montir') . '|nullable|string|unique:users,kode_montir',
         ]);
 
         User::create([
@@ -44,6 +48,10 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            
+            // Simpan data spesifik role (sesuai migrasi 'users' kita yang baru)
+            'kode_montir' => $request->role == 'montir' ? $request->kode_montir : null,
+            'tanggal_bergabung' => $request->role == 'montir' ? now() : null,
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'User baru berhasil ditambahkan.');
@@ -52,7 +60,7 @@ class UserController extends Controller
     /**
      * Menampilkan form untuk mengedit user.
      */
-    public function edit(User $user)
+    public function edit(User $user) // Route-Model Binding ini sudah benar
     {
         return view('admin.users.edit', ['user' => $user]);
     }
@@ -64,15 +72,22 @@ class UserController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('User', 'email')->ignore($user->id_user, 'id_user')],
+            // PERBAIKAN: Validasi ke tabel 'users' dan primary key 'id'
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => 'required|in:admin,montir,kasir',
             'password' => 'nullable|string|min:8|confirmed',
+            // PERBAIKAN: Validasi unik saat update
+            'kode_montir' => Rule::requiredIf($request->role == 'montir') . '|nullable|string|unique:users,kode_montir,' . $user->id,
         ]);
 
         $user->nama = $request->nama;
         $user->email = $request->email;
         $user->role = $request->role;
+
+        // Simpan data spesifik role
+        $user->kode_montir = $request->role == 'montir' ? $request->kode_montir : null;
         
+        // Logika password Anda sudah sempurna
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
@@ -87,7 +102,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if (auth()->user()->id_user == $user->id_user) {
+        // PERBAIKAN: Cek menggunakan primary key 'id'
+        if (auth()->user()->id == $user->id) {
             return redirect()->route('admin.users.index')->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 

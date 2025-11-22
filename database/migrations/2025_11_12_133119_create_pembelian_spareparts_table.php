@@ -9,22 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('Pembelian_Sparepart', function (Blueprint $table) {
-            $table->id('id_pembelian');    
-            $table->foreignId('id_sparepart')->constrained('Sparepart', 'id_sparepart');
+        Schema::create('pembelian_spareparts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('sparepart_id')->constrained('spareparts')->onDelete('cascade');
             $table->date('tanggal_masuk');
             $table->integer('jumlah_masuk');
             $table->integer('stok_tersisa');
             $table->decimal('harga_beli', 15, 2);
-            $table->decimal('harga_jual', 15, 2);
+            $table->decimal('harga_jual', 15, 2); // Harga jual untuk batch ini
+            $table->timestamps();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('pembelian_spareparts');
