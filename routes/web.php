@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])->prefix('admin')->na
     Route::resource('/spareparts', \App\Http\Controllers\Admin\SparepartController::class);
     Route::resource('/kendaraans', \App\Http\Controllers\Admin\KendaraanController::class);
     Route::resource('/pembelian-spareparts', \App\Http\Controllers\Admin\PembelianSparepartController::class);
+    Route::resource('/servis', \App\Http\Controllers\Admin\ServisController::class);
 });
 
 // --- Grup Rute HANYA UNTUK MONTIR ---

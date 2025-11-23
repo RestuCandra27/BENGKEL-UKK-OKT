@@ -46,7 +46,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="text-center">Belum ada data sparepart.</td>
+                        <td colspan="6" class="text-center">Belum ada data sparepart.</td>
                     </tr>
                     @endforelse
                 </tbody>

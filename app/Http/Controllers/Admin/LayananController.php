@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Layanan; // Impor Model Layanan
+use App\Models\Layanan;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; // Impor untuk validasi
+use Illuminate\Validation\Rule;
 
 class LayananController extends Controller
 {
@@ -31,26 +31,22 @@ class LayananController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validasi data yang masuk
         $request->validate([
             'nama_layanan' => 'required|string|max:100|unique:layanans,nama_layanan',
             'biaya_standar' => 'required|numeric|min:0',
+            'deskripsi' => 'nullable|string', // <-- Wajib ada agar deskripsi tervalidasi
         ]);
 
+        // 2. Simpan data ke database
         Layanan::create([
             'nama_layanan' => $request->nama_layanan,
             'biaya_standar' => $request->biaya_standar,
+            'deskripsi' => $request->deskripsi, // <-- Wajib ada agar tersimpan
         ]);
 
         return redirect()->route('admin.layanans.index')
                          ->with('success', 'Layanan baru berhasil ditambahkan.');
-    }
-
-    /**
-     * Menampilkan detail satu layanan (tidak kita pakai saat ini).
-     */
-    public function show(string $id)
-    {
-        //
     }
 
     /**
@@ -68,24 +64,24 @@ class LayananController extends Controller
     {
         // 1. Validasi data yang masuk
         $request->validate([
+            // Validasi nama (unik, tapi abaikan nama layanan ini sendiri)
             'nama_layanan' => [
                 'required',
                 'string',
-                'max:100','deskripsi' => 'nullable|string',
+                'max:100',
                 Rule::unique('layanans', 'nama_layanan')->ignore($layanan->id)
-                
             ],
             'biaya_standar' => 'required|numeric|min:0',
+            'deskripsi' => 'nullable|string', // <-- Wajib ada
         ]);
 
-        // 2. Jika validasi lolos, update data di database
+        // 2. Update data di database
         $layanan->update([
             'nama_layanan' => $request->nama_layanan,
             'biaya_standar' => $request->biaya_standar,
-            'deskripsi' => $request->deskripsi,
+            'deskripsi' => $request->deskripsi, // <-- Wajib ada
         ]);
 
-        // 3. Arahkan kembali ke halaman index dengan pesan sukses
         return redirect()->route('admin.layanans.index')
                          ->with('success', 'Data layanan berhasil diperbarui.');
     }

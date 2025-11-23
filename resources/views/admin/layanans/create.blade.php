@@ -35,12 +35,12 @@
                 <div class="form-group">
                     <label for="biaya_standar">Biaya Standar (Rp)</label>
                     <input type="number" name="biaya_standar" class="form-control" value="{{ old('biaya_standar') }}" required step="1000">
-                    <small class="form-text text-muted">Masukkan angka saja, contoh: 50000</small>
+                    <small class="form-text text-muted"></small>
                 </div>
 
                 <div class="form-group">
                     <label for="deskripsi">Deskripsi / Keterangan</label>
-                    <textarea name="deskripsi" class="form-control" rows="3" placeholder="Contoh: Jasa kuras dan ganti filter oli">{{ old('deskripsi') }}</textarea>
+                    <textarea name="deskripsi" class="form-control" rows="3">{{ old('deskripsi') }}</textarea>
                 </div>
 
                 {{-- Tombol Simpan dan Batal --}}

@@ -23,6 +23,7 @@ return new class extends Migration
             
             // Jika servis ini dibuat dari booking, isi ini
             $table->foreignId('reservasi_id')->nullable()->constrained('reservasis')->onDelete('set null'); 
+            $table->text('keluhan');
 
             $table->date('tanggal_servis');
             $table->enum('status_servis', ['menunggu', 'dikerjakan', 'selesai', 'dibayar', 'dibatalkan'])->default('menunggu');

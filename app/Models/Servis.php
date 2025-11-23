@@ -9,38 +9,19 @@ class Servis extends Model
 {
     use HasFactory;
 
-    protected $table = 'Servis';
-    protected $primaryKey = 'id_servis';
+    protected $table = 'servis'; // Sesuai nama tabel di database
 
-    /**
-     * Mendapatkan data pelanggan (dari tabel User).
-     */
-    public function pelanggan()
-    {
-        return $this->belongsTo(User::class, 'id_user', 'id_user');
-    }
+    protected $fillable = [
+        'user_id',
+        'kendaraan_id',
+        'montir_id',
+        'keluhan', // <-- Pastikan kolom ini ada, atau gunakan 'catatan_masuk' jika di database beda
+        'tanggal_servis',
+        'status_servis',
+        'total_biaya'
+    ];
 
-    /**
-     * Mendapatkan data montir (dari tabel User).
-     */
-    public function montir()
-    {
-        return $this->belongsTo(User::class, 'id_montir', 'id_user');
-    }
-
-    /**
-     * Mendapatkan data kendaraan yang diservis.
-     */
-    public function kendaraan()
-    {
-        return $this->belongsTo(Kendaraan::class, 'id_kendaraan', 'id_kendaraan');
-    }
-    
-    /**
-     * Mendapatkan data invoice dari servis ini.
-     */
-    public function invoice()
-    {
-        return $this->hasOne(Invoice::class, 'id_servis', 'id_servis');
-    }
+    public function pelanggan() { return $this->belongsTo(User::class, 'user_id'); }
+    public function kendaraan() { return $this->belongsTo(Kendaraan::class, 'kendaraan_id'); }
+    public function montir()    { return $this->belongsTo(User::class, 'montir_id'); }
 }

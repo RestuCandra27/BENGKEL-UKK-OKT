@@ -35,16 +35,19 @@
                     <input type="text" name="nama_sparepart" class="form-control" value="{{ old('nama_sparepart') }}" required>
                 </div>
 
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="merek">Merek / Brand</label>
-                        <input type="text" name="merek" class="form-control" value="{{ old('merek') }}" placeholder="Contoh: Shell, Honda">
+                {{-- Baris Merek & Kategori (Menggunakan Row agar sejajar) --}}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="merek">Merek / Brand</label>
+                            <input type="text" name="merek" class="form-control" value="{{ old('merek') }}">
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="kategori">Kategori</label>
-                        <input type="text" name="kategori" class="form-control" value="{{ old('kategori') }}" placeholder="Contoh: Oli Mesin, Ban, Kampas" required>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="kategori">Kategori</label>
+                            <input type="text" name="kategori" class="form-control" value="{{ old('kategori') }}" required>
+                        </div>
                     </div>
                 </div>
 

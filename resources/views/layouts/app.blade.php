@@ -217,6 +217,14 @@
                                 <p>Stok Masuk (Pembelian)</p>
                             </a>
                         </li>
+                        <li class="nav-header">TRANSAKSI BENGKEL</li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.servis.index') }}" 
+                               class="nav-link {{ request()->routeIs('admin.servis.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-tools"></i>
+                                <p>Pendaftaran Servis</p>
+                            </a>
+                        </li>
 
                         
 

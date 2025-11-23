@@ -31,22 +31,24 @@ class SparepartController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validasi input
         $request->validate([
             'kode_sku' => 'nullable|string|max:50|unique:spareparts,kode_sku',
             'nama_sparepart' => 'required|string|max:100',
-            'merek' => 'nullable|string|max:50',
-            'kategori' => 'required|string|max:50', // Wajib diisi biar rapi
+            'merek' => 'nullable|string|max:50',       // Validasi Merek
+            'kategori' => 'required|string|max:50',    // Validasi Kategori
         ]);
 
+        // 2. Simpan ke database
         Sparepart::create([
             'kode_sku' => $request->kode_sku,
             'nama_sparepart' => $request->nama_sparepart,
-            'merek' => $request->merek,
-            'kategori' => $request->kategori,
+            'merek' => $request->merek,           // Simpan Merek
+            'kategori' => $request->kategori,     // Simpan Kategori
         ]);
 
         return redirect()->route('admin.spareparts.index')
-            ->with('success', 'Sparepart baru berhasil ditambahkan.');
+                         ->with('success', 'Sparepart baru berhasil ditambahkan.');
     }
 
     /**
@@ -62,26 +64,30 @@ class SparepartController extends Controller
      */
     public function update(Request $request, Sparepart $sparepart)
     {
+        // 1. Validasi input
         $request->validate([
-            // Validasi unik, tapi abaikan ID sparepart ini sendiri
+            // Validasi SKU (unik, tapi abaikan ID sparepart ini sendiri)
             'kode_sku' => [
                 'nullable',
                 'string',
                 'max:50',
-                'merek' => $request->merek,
-                'kategori' => $request->kategori,
                 Rule::unique('spareparts', 'kode_sku')->ignore($sparepart->id)
             ],
             'nama_sparepart' => 'required|string|max:100',
+            'merek' => 'nullable|string|max:50',       // Validasi Merek
+            'kategori' => 'required|string|max:50',    // Validasi Kategori
         ]);
 
+        // 2. Update data di database
         $sparepart->update([
             'kode_sku' => $request->kode_sku,
             'nama_sparepart' => $request->nama_sparepart,
+            'merek' => $request->merek,           // Update Merek
+            'kategori' => $request->kategori,     // Update Kategori
         ]);
 
         return redirect()->route('admin.spareparts.index')
-            ->with('success', 'Data sparepart berhasil diperbarui.');
+                         ->with('success', 'Data sparepart berhasil diperbarui.');
     }
 
     /**
@@ -91,6 +97,6 @@ class SparepartController extends Controller
     {
         $sparepart->delete();
         return redirect()->route('admin.spareparts.index')
-            ->with('success', 'Data sparepart berhasil dihapus.');
+                         ->with('success', 'Data sparepart berhasil dihapus.');
     }
 }
