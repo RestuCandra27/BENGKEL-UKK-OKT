@@ -2,28 +2,32 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
-    use HasFactory;
+    protected $fillable = [
+        'servis_id',
+        'user_id',
+        'nomor_invoice',
+        'total_biaya_layanan',
+        'total_biaya_sparepart',
+        'total_tagihan',
+        'status_pembayaran'
+    ];
 
-    protected $primaryKey = 'id_invoice';
-
-    /**
-     * Mendapatkan data servis yang menghasilkan invoice ini.
-     */
     public function servis()
     {
-        return $this->belongsTo(Servis::class, 'id_servis', 'id_servis');
+        return $this->belongsTo(Servis::class, 'servis_id');
     }
 
-    /**
-     * Mendapatkan semua pembayaran untuk invoice ini.
-     */
+    public function pelanggan()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function payments()
     {
-        return $this->hasMany(Payment::class, 'id_invoice', 'id_invoice');
+        return $this->hasMany(Payment::class, 'invoice_id');
     }
 }

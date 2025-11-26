@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id(); 
 
             // KONVENSI: Foreign key ke tabel 'users'
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+           $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
 
             $table->string('merek', 50)->nullable();
             $table->string('model', 50)->nullable();

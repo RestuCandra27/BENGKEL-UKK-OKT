@@ -13,14 +13,14 @@
     </x-slot>
 
     @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
     @endif
     @if (session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
-        </div>
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
     @endif
 
     <div class="card">
@@ -38,33 +38,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($pelanggans as $pelanggan)
+                    @forelse ($pelanggans as $pelanggan)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
-                        
-                        {{-- PERBAIKAN: Hapus ->user. Ambil data langsung dari $pelanggan --}}
                         <td>{{ $pelanggan->nama }}</td>
                         <td>{{ $pelanggan->email }}</td>
-                        
-                        {{-- Kode ini sudah benar --}}
                         <td>{{ $pelanggan->no_hp ?? '-' }}</td>
                         <td><span class="badge bg-primary">{{ $pelanggan->jenis_member }}</span></td>
-
-                        {{-- PERBAIKAN: Menambahkan tombol Aksi (Edit & Hapus) --}}
                         <td>
                             <a href="{{ route('admin.pelanggan.edit', $pelanggan->id) }}" class="btn btn-sm btn-info">Edit</a>
-                            
-                            <form action="{{ route('admin.pelanggan.destroy', $pelanggan->id) }}" method="POST" class="inline-block">
+
+                            <form action="{{ route('admin.pelanggan.destroy', $pelanggan->id) }}"
+                                method="POST"
+                                class="d-inline"
+                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')">
-                                    Hapus
-                                </button>
+                                <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                             </form>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        {{-- 6 kolom: #, Nama, Email, No HP, Jenis Member, Aksi --}}
+                        <td colspan="6" class="text-center">Belum ada data pelanggan.</td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

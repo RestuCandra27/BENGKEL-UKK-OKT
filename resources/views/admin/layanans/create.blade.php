@@ -2,9 +2,12 @@
 <x-app-layout>
     {{-- Header Halaman --}}
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Tambah Layanan Baru') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Tambah Layanan Baru') }}
+            </h2>
+            <a href="{{ route('admin.layanans.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">

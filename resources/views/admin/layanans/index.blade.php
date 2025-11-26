@@ -39,30 +39,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- Loop untuk menampilkan data layanan --}}
-                    @foreach ($layanans as $layanan)
+                    @forelse ($layanans as $layanan)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $layanan->nama_layanan }}</td>
-                        {{-- number_format untuk menampilkan angka sebagai uang --}}
                         <td>{{ number_format($layanan->biaya_standar, 0, ',', '.') }}</td>
                         <td>{{ $layanan->deskripsi ?? '-' }}</td>
                         <td>
                             <a href="{{ route('admin.layanans.edit', $layanan->id) }}" class="btn btn-sm btn-info">Edit</a>
 
-                            {{-- Tombol Hapus --}}
-                            <form action="{{ route('admin.layanans.destroy', $layanan->id) }}" method="POST" class="inline-block">
+                            <form action="{{ route('admin.layanans.destroy', $layanan->id) }}"
+                                method="POST"
+                                class="d-inline"
+                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus layanan ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger"
-                                    onclick="return confirm('Apakah Anda yakin ingin menghapus layanan ini?')">
+                                <button type="submit" class="btn btn-sm btn-danger">
                                     Hapus
                                 </button>
                             </form>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        {{-- 5 kolom: #, Nama Layanan, Biaya, Deskripsi, Aksi --}}
+                        <td colspan="5" class="text-center">Belum ada data layanan.</td>
+                    </tr>
+                    @endforelse
                 </tbody>
+
             </table>
         </div>
     </div>

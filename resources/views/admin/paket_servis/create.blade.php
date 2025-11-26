@@ -12,13 +12,13 @@
     <div class="card">
         <div class="card-body">
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
 
             <form action="{{ route('admin.paket-servis.store') }}" method="POST">
@@ -48,13 +48,13 @@
                     <label class="form-label">Pilih Layanan (minimal 1)</label>
                     <div class="form-check">
                         @foreach($layanans as $lay)
-                            <div>
-                                <input class="form-check-input" type="checkbox" name="layanan_ids[]" value="{{ $lay->id }}" id="lay-{{ $lay->id }}"
-                                    {{-- PERBAIKAN: Agar centangan tidak hilang saat validasi gagal --}}
-                                    {{ (is_array(old('layanan_ids')) && in_array($lay->id, old('layanan_ids'))) ? 'checked' : '' }}>
-                                
-                                <label class="form-check-label" for="lay-{{ $lay->id }}">{{ $lay->nama_layanan }}</label>
-                            </div>
+                        <div>
+                            <input class="form-check-input" type="checkbox" name="layanan_ids[]" value="{{ $lay->id }}" id="lay-{{ $lay->id }}"
+                                {{-- PERBAIKAN: Agar centangan tidak hilang saat validasi gagal --}}
+                                {{ (is_array(old('layanan_ids')) && in_array($lay->id, old('layanan_ids'))) ? 'checked' : '' }}>
+
+                            <label class="form-check-label" for="lay-{{ $lay->id }}">{{ $lay->nama_layanan }}</label>
+                        </div>
                         @endforeach
                     </div>
                 </div>

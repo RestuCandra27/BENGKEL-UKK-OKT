@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Data Sparepart') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Edit Data Sparepart') }}
+            </h2>
+            <a href="{{ route('admin.spareparts.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">

@@ -1,23 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Tambah Kendaraan Baru') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Tambah Kendaraan Baru') }}
+            </h2>
+            <a href="{{ route('admin.kendaraans.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">
         <div class="card-body">
 
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
-            
+
             <form action="{{ route('admin.kendaraans.store') }}" method="POST">
                 @csrf
 
@@ -27,9 +30,9 @@
                     <select name="user_id" class="form-control" required>
                         <option value="">-- Pilih Pelanggan --</option>
                         @foreach($pelanggans as $p)
-                            <option value="{{ $p->id }}" {{ old('user_id') == $p->id ? 'selected' : '' }}>
-                                {{ $p->nama }} ({{ $p->no_hp ?? 'No HP -' }})
-                            </option>
+                        <option value="{{ $p->id }}" {{ old('user_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama }} ({{ $p->no_hp ?? 'No HP -' }})
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -89,7 +92,7 @@
                 <button type="submit" class="btn btn-primary">Simpan Kendaraan</button>
                 <a href="{{ route('admin.kendaraans.index') }}" class="btn btn-secondary">Batal</a>
             </form>
-            
+
         </div>
     </div>
 </x-app-layout>

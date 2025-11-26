@@ -145,7 +145,7 @@
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
-                        {{-- MENU DASHBOARD --}}
+                        {{-- MENU DASHBOARD (UMUM UNTUK SEMUA ROLE) --}}
                         <li class="nav-item">
                             <a href="{{ route('dashboard') }}"
                                 class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -154,7 +154,16 @@
                             </a>
                         </li>
 
-                        {{-- MENU MANAJEMEN USER --}}
+                        @php
+                        $role = auth()->user()->role ?? null;
+                        @endphp
+
+                        {{-- ===================== --}}
+                        {{-- MENU KHUSUS ADMIN     --}}
+                        {{-- ===================== --}}
+                        @if ($role === 'admin')
+                        {{-- MANAJEMEN USER --}}
+                        <li class="nav-header">MANAJEMEN USER</li>
                         <li class="nav-item">
                             <a href="{{ route('admin.users.index') }}"
                                 class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
@@ -163,8 +172,9 @@
                             </a>
                         </li>
 
-                        {{-- GRUP MENU DATA MASTER --}}
+                        {{-- DATA MASTER --}}
                         <li class="nav-header">DATA MASTER</li>
+
                         <li class="nav-item">
                             <a href="{{ route('admin.pelanggan.index') }}"
                                 class="nav-link {{ request()->routeIs('admin.pelanggan.*') ? 'active' : '' }}">
@@ -173,66 +183,86 @@
                             </a>
                         </li>
 
-                        {{-- =============================================== --}}
-                        {{-- PERBAIKAN: MENU BARU DITAMBAHKAN DI SINI --}}
-                        {{-- =============================================== --}}
-
                         <li class="nav-item">
-                            {{-- PERBAIKAN: Mengarahkan ke rute yang benar --}}
-                            <a href="{{ route('admin.layanans.index') }}" class="nav-link {{ request()->routeIs('admin.layanans.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.layanans.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.layanans.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-concierge-bell"></i>
                                 <p>Data Layanan</p>
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            <a href="{{ route('admin.paket-servis.index') }}" 
-                               class="nav-link {{ request()->routeIs('admin.paket-servis.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.paket-servis.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.paket-servis.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-box-open"></i>
                                 <p>Data Paket Servis</p>
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            <a href="{{ route('admin.spareparts.index') }}" class="nav-link {{ request()->routeIs('admin.spareparts.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.spareparts.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.spareparts.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-cogs"></i>
                                 <p>Data Sparepart</p>
                             </a>
                         </li>
-                        
+
                         <li class="nav-item">
-                            <a href="{{ route('admin.kendaraans.index') }}" 
-                               class="nav-link {{ request()->routeIs('admin.kendaraans.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.kendaraans.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.kendaraans.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-motorcycle"></i>
                                 <p>Data Kendaraan</p>
                             </a>
                         </li>
 
+                        {{-- INVENTORI & STOK --}}
                         <li class="nav-header">INVENTORI & STOK</li>
-                        
                         <li class="nav-item">
-                            <a href="{{ route('admin.pembelian-spareparts.index') }}" 
-                               class="nav-link {{ request()->routeIs('admin.pembelian-spareparts.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.pembelian-spareparts.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.pembelian-spareparts.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-boxes"></i>
                                 <p>Stok Masuk (Pembelian)</p>
                             </a>
                         </li>
+
+                        {{-- TRANSAKSI BENGKEL --}}
                         <li class="nav-header">TRANSAKSI BENGKEL</li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.servis.index') }}" 
-                               class="nav-link {{ request()->routeIs('admin.servis.*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.servis.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.servis.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-tools"></i>
                                 <p>Pendaftaran Servis</p>
                             </a>
                         </li>
 
-                        
+                        <li class="nav-item">
+                            <a href="{{ route('admin.invoices.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-invoice"></i>
+                                <p>Data Invoice</p>
+                            </a>
+                        </li>
+                        @endif
 
-                        {{-- =============================================== --}}
-                        {{-- AKHIR DARI MENU BARU --}}
-                        {{-- =============================================== --}}
+                        {{-- ===================== --}}
+                        {{-- MENU KHUSUS KASIR     --}}
+                        {{-- ===================== --}}
+                        @if ($role === 'kasir')
+                        <li class="nav-header">TRANSAKSI</li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('kasir.invoices.index') }}"
+                                class="nav-link {{ request()->routeIs('kasir.invoices.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                                <p>Invoice & Pembayaran</p>
+                            </a>
+                        </li>
+                        @endif
+
+                        {{-- (Nanti kalau mau, bisa tambah menu khusus montir/pelanggan di sini) --}}
 
                     </ul>
+
                 </nav>
             </div>
         </aside>

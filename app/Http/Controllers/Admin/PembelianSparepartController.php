@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PembelianSparepart;
+use App\Models\Sparepart;
 use Illuminate\Http\Request;
 
 class PembelianSparepartController extends Controller
@@ -13,85 +14,88 @@ class PembelianSparepartController extends Controller
      */
     public function index()
     {
-        // Ambil data pembelian, urutkan dari yang terbaru
-        // 'with('sparepart')' agar kita bisa menampilkan nama sparepart-nya (bukan cuma ID)
+        // Ambil data pembelian + relasi sparepart, urut dari terbaru
         $pembelians = PembelianSparepart::with('sparepart')
-                        ->orderBy('tanggal_masuk', 'desc')
-                        ->paginate(10);
+            ->orderBy('tanggal_masuk', 'desc')
+            ->paginate(10);
 
         return view('admin.pembelian_spareparts.index', compact('pembelians'));
     }
 
-   public function create()
+    /**
+     * Form input stok masuk.
+     */
+    public function create()
     {
-        // Ambil semua data sparepart untuk dipilih di dropdown
-        $spareparts = \App\Models\Sparepart::orderBy('nama_sparepart', 'asc')->get();
-        
+        // Untuk dropdown sparepart
+        $spareparts = Sparepart::orderBy('nama_sparepart', 'asc')->get();
+
         return view('admin.pembelian_spareparts.create', compact('spareparts'));
     }
 
     /**
-     * Menyimpan data stok masuk.
+     * Simpan stok masuk baru.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'sparepart_id' => 'required|exists:spareparts,id',
-            'tanggal_masuk' => 'required|date',
-            'jumlah_masuk' => 'required|integer|min:1',
-            'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'sparepart_id'  => ['required', 'exists:spareparts,id'],
+            'tanggal_masuk' => ['required', 'date'],
+            'jumlah_masuk'  => ['required', 'integer', 'min:1'],
+            'harga_beli'    => ['required', 'numeric', 'min:0'],
+            'harga_jual'    => ['required', 'numeric', 'min:0'],
         ]);
 
-        \App\Models\PembelianSparepart::create([
-            'sparepart_id' => $request->sparepart_id,
-            'tanggal_masuk' => $request->tanggal_masuk,
-            'jumlah_masuk' => $request->jumlah_masuk,
-            
-            // PENTING UNTUK FIFO:
-            // Saat barang baru masuk, stok tersisanya sama dengan jumlah masuk.
-            'stok_tersisa' => $request->jumlah_masuk, 
-            
-            'harga_beli' => $request->harga_beli,
-            'harga_jual' => $request->harga_jual,
-        ]);
+        // stok_tersisa awal = jumlah_masuk
+        $validated['stok_tersisa'] = $validated['jumlah_masuk'];
+
+        PembelianSparepart::create($validated);
 
         return redirect()->route('admin.pembelian-spareparts.index')
-                         ->with('success', 'Stok berhasil ditambahkan.');
+                         ->with('success', 'Stok masuk berhasil ditambahkan.');
     }
 
+    /**
+     * Form edit stok masuk.
+     */
     public function edit(string $id)
     {
-        $pembelian = \App\Models\PembelianSparepart::findOrFail($id);
-        $spareparts = \App\Models\Sparepart::orderBy('nama_sparepart', 'asc')->get();
+        $pembelian  = PembelianSparepart::findOrFail($id);
+        $spareparts = Sparepart::orderBy('nama_sparepart', 'asc')->get();
 
         return view('admin.pembelian_spareparts.edit', compact('pembelian', 'spareparts'));
     }
 
     /**
      * Update data stok.
+     *
+     * Catatan: di sini kita tidak mengutak-atik stok_tersisa,
+     * karena stok bisa sudah terpakai lewat modul Servis.
      */
     public function update(Request $request, string $id)
     {
-        $pembelian = \App\Models\PembelianSparepart::findOrFail($id);
+        $pembelian = PembelianSparepart::findOrFail($id);
 
-        $request->validate([
-            'sparepart_id' => 'required|exists:spareparts,id',
-            'tanggal_masuk' => 'required|date',
-            'jumlah_masuk' => 'required|integer|min:1',
-            'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'sparepart_id'  => ['required', 'exists:spareparts,id'],
+            'tanggal_masuk' => ['required', 'date'],
+            'jumlah_masuk'  => ['required', 'integer', 'min:1'],
+            'harga_beli'    => ['required', 'numeric', 'min:0'],
+            'harga_jual'    => ['required', 'numeric', 'min:0'],
         ]);
 
-        // PENTING: Jika jumlah diubah, kita reset stok_tersisa agar sama dengan jumlah baru.
-        // (Asumsi: Data ini diedit karena salah input di awal dan belum ada yang terjual).
+        // Hitung selisih jumlah (kalau kamu mau update stok_tersisa, bisa pakai ini)
+        $selisih = $validated['jumlah_masuk'] - $pembelian->jumlah_masuk;
+
+        // Update field utama
         $pembelian->update([
-            'sparepart_id' => $request->sparepart_id,
-            'tanggal_masuk' => $request->tanggal_masuk,
-            'jumlah_masuk' => $request->jumlah_masuk,
-            'stok_tersisa' => $request->jumlah_masuk, // Reset stok
-            'harga_beli' => $request->harga_beli,
-            'harga_jual' => $request->harga_jual,
+            'sparepart_id'  => $validated['sparepart_id'],
+            'tanggal_masuk' => $validated['tanggal_masuk'],
+            'jumlah_masuk'  => $validated['jumlah_masuk'],
+            'harga_beli'    => $validated['harga_beli'],
+            'harga_jual'    => $validated['harga_jual'],
+            // opsional: kalau mau stok_tersisa ikut disesuaikan
+            // 'stok_tersisa'  => $pembelian->stok_tersisa + $selisih,
         ]);
 
         return redirect()->route('admin.pembelian-spareparts.index')
@@ -100,10 +104,14 @@ class PembelianSparepartController extends Controller
 
     /**
      * Hapus data stok.
+     *
+     * Catatan: ini masih versi sederhana.
+     * Kalau ingin lebih aman, kamu bisa cek dulu apakah stok_tersisa == jumlah_masuk
+     * (artinya belum ada yang terpakai).
      */
     public function destroy(string $id)
     {
-        $pembelian = \App\Models\PembelianSparepart::findOrFail($id);
+        $pembelian = PembelianSparepart::findOrFail($id);
         $pembelian->delete();
 
         return redirect()->route('admin.pembelian-spareparts.index')

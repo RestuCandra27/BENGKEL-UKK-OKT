@@ -1,29 +1,34 @@
 {{-- Menggunakan layout utama 'app.blade.php'. --}}
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Data Pelanggan') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight m-0">
+                {{ __('Edit Data Pelanggan') }}
+            </h2>
+
+            <a href="{{ route('admin.pelanggan.index') }}" class="btn btn-secondary">Kembali</a> </a>
+        </div>
     </x-slot>
+
 
     <div class="card">
         <div class="card-body">
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
-            
+
             {{-- FORMULIR UTAMA --}}
             {{-- Mengarah ke rute update, mengirimkan ID pelanggan --}}
             <form action="{{ route('admin.pelanggan.update', $pelanggan->id) }}" method="POST">
                 @csrf
                 @method('PATCH') {{-- Method 'PATCH' untuk update --}}
-                
+
                 {{-- Input Nama --}}
                 <div class="form-group">
                     <label for="nama">Nama</label>
@@ -60,7 +65,7 @@
 
                 <hr>
                 <p class="text-muted">Kosongkan password jika tidak ingin mengubahnya.</p>
-                
+
                 {{-- Input Password (Opsional) --}}
                 <div class="form-group">
                     <label for="password">Password Baru</label>

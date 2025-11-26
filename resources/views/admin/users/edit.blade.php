@@ -1,9 +1,12 @@
 {{-- Menggunakan layout utama 'app.blade.php'. --}}
 <x-app-layout>
     <x-slot name="header">
+        <div class="d-flex justify-content-between align-items-center">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Edit Pengguna') }}
         </h2>
+        <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">

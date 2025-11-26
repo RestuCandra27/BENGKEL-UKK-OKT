@@ -11,18 +11,18 @@
     <div class="card">
         <div class="card-body">
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
 
             {{-- Arahkan ke rute update --}}
             <form action="{{ route('admin.paket-servis.update', $paket->id) }}" method="POST">
-                @csrf 
+                @csrf
                 @method('PUT')
 
                 <div class="form-group">
@@ -50,20 +50,20 @@
                     <label class="d-block">Pilih Layanan (minimal 1)</label>
                     <div class="row">
                         @foreach($layanans as $lay)
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           name="layanan_ids[]" 
-                                           value="{{ $lay->id }}" 
-                                           id="lay-{{ $lay->id }}"
-                                           {{-- LOGIKA CHECKED YANG LEBIH KUAT --}}
-                                           {{ in_array($lay->id, old('layanan_ids', $selectedLayananIDs ?? [])) ? 'checked' : '' }}>
-                                    
-                                    <label class="form-check-label" for="lay-{{ $lay->id }}">
-                                        {{ $lay->nama_layanan }}
-                                    </label>
-                                </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                    name="layanan_ids[]"
+                                    value="{{ $lay->id }}"
+                                    id="lay-{{ $lay->id }}"
+                                    {{-- LOGIKA CHECKED YANG LEBIH KUAT --}}
+                                    {{ in_array($lay->id, old('layanan_ids', $selectedLayananIDs ?? [])) ? 'checked' : '' }}>
+
+                                <label class="form-check-label" for="lay-{{ $lay->id }}">
+                                    {{ $lay->nama_layanan }}
+                                </label>
                             </div>
+                        </div>
                         @endforeach
                     </div>
                 </div>

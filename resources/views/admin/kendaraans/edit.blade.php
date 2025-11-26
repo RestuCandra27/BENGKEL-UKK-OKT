@@ -1,23 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Data Kendaraan') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Edit Data Kendaraan') }}
+            </h2>
+            <a href="{{ route('admin.kendaraans.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">
         <div class="card-body">
 
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
-            
+
             {{-- Form mengarah ke rute update --}}
             <form action="{{ route('admin.kendaraans.update', $kendaraan->id) }}" method="POST">
                 @csrf
@@ -28,11 +31,11 @@
                     <label>Pemilik Kendaraan (Pelanggan)</label>
                     <select name="user_id" class="form-control select2" required>
                         @foreach($pelanggans as $p)
-                            <option value="{{ $p->id }}" 
-                                {{-- Logika Selected: Pilih jika ID-nya sama dengan user_id di database --}}
-                                {{ old('user_id', $kendaraan->user_id) == $p->id ? 'selected' : '' }}>
-                                {{ $p->nama }} ({{ $p->no_hp ?? 'No HP -' }})
-                            </option>
+                        <option value="{{ $p->id }}"
+                            {{-- Logika Selected: Pilih jika ID-nya sama dengan user_id di database --}}
+                            {{ old('user_id', $kendaraan->user_id) == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama }} ({{ $p->no_hp ?? 'No HP -' }})
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -91,7 +94,7 @@
                 <button type="submit" class="btn btn-primary">Update Kendaraan</button>
                 <a href="{{ route('admin.kendaraans.index') }}" class="btn btn-secondary">Batal</a>
             </form>
-            
+
         </div>
     </div>
 </x-app-layout>

@@ -1,23 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Input Stok Masuk') }}
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Input Stok Masuk') }}
+            </h2>
+            <a href="{{ route('admin.pembelian-spareparts.index') }}" class="btn btn-secondary">Kembali</a>
+        </div>
     </x-slot>
 
     <div class="card">
         <div class="card-body">
 
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
-            
+
             <form action="{{ route('admin.pembelian-spareparts.store') }}" method="POST">
                 @csrf
 
@@ -27,9 +30,9 @@
                     <select name="sparepart_id" class="form-control" required>
                         <option value="">-- Pilih Sparepart --</option>
                         @foreach($spareparts as $part)
-                            <option value="{{ $part->id }}">
-                                {{ $part->nama_sparepart }} (SKU: {{ $part->kode_sku ?? '-' }})
-                            </option>
+                        <option value="{{ $part->id }}">
+                            {{ $part->nama_sparepart }} (SKU: {{ $part->kode_sku ?? '-' }})
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -69,7 +72,7 @@
                 <button type="submit" class="btn btn-primary">Simpan Stok</button>
                 <a href="{{ route('admin.pembelian-spareparts.index') }}" class="btn btn-secondary">Batal</a>
             </form>
-            
+
         </div>
     </div>
 </x-app-layout>
