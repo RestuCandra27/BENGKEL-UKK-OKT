@@ -16,6 +16,7 @@ class Servis extends Model
         'kendaraan_id',
         'montir_id',
         'keluhan',
+        'catatan_montir',
         'tanggal_servis',
         'status_servis', // menunggu, dikerjakan, selesai, dibayar, dibatalkan
         'total_biaya'

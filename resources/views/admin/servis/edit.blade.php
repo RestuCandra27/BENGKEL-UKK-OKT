@@ -136,6 +136,28 @@
                                     </td>
                                 </form>
                             </tr>
+                            {{-- Form Tambah Paket Servis --}}
+                            <tr class="bg-light">
+                                <form action="{{ route('admin.servis.layanan.store', $servis->id) }}" method="POST">
+                                    @csrf
+                                    <td colspan="2">
+                                        <select name="paket_servis_id" class="form-control form-control-sm">
+                                            <option value="">+ Tambah Paket Servis...</option>
+                                            @foreach($all_paket_servis as $p)
+                                            <option value="{{ $p->id }}">
+                                                {{ $p->nama_paket ?? 'Paket #' . $p->id }}
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+
                         </tbody>
                     </table>
                 </div>

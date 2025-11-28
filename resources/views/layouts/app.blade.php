@@ -139,13 +139,14 @@
         {{-- MENU KIRI (SIDEBAR) --}}
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <a href="{{ route('dashboard') }}" class="brand-link">
-                <span class="brand-text font-weight-light">Bengkel UKK</span>
+                <span class="brand-text font-weight-light">Bengkel Candra</span>
             </a>
             <div class="sidebar">
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
                         {{-- MENU DASHBOARD (UMUM UNTUK SEMUA ROLE) --}}
+                        @if (auth()->check() && auth()->user()->role !== 'pelanggan')
                         <li class="nav-item">
                             <a href="{{ route('dashboard') }}"
                                 class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -153,6 +154,7 @@
                                 <p>Dashboard</p>
                             </a>
                         </li>
+                        @endif
 
                         @php
                         $role = auth()->user()->role ?? null;
@@ -258,6 +260,53 @@
                             </a>
                         </li>
                         @endif
+
+                        {{-- MENU KHUSUS PELANGGAN --}}
+                        @if ($role === 'pelanggan')
+                        <li class="nav-header">SERVIS SAYA</li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pelanggan.dashboard') }}"
+                                class="nav-link {{ request()->routeIs('pelanggan.dashboard') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-home"></i>
+                                <p>Dashboard Pelanggan</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pelanggan.servis.index') }}"
+                                class="nav-link {{ request()->routeIs('pelanggan.servis.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-history"></i>
+                                <p>Riwayat Servis</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pelanggan.invoices.index') }}"
+                                class="nav-link {{ request()->routeIs('pelanggan.invoices.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                                <p>Invoice Saya</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pelanggan.reservasis.index') }}"
+                                class="nav-link {{ request()->routeIs('pelanggan.reservasis.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-calendar-check"></i>
+                                <p>Booking Servis</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pelanggan.kendaraans.index') }}"
+                                class="nav-link {{ request()->routeIs('pelanggan.kendaraans.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-car"></i>
+                                <p>Kendaraan Saya</p>
+                            </a>
+                        </li>
+                        @endif
+
+
 
                         {{-- (Nanti kalau mau, bisa tambah menu khusus montir/pelanggan di sini) --}}
 

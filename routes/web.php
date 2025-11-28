@@ -19,15 +19,24 @@ use App\Http\Controllers\Admin\PembelianSparepartController;
 use App\Http\Controllers\Admin\ServisController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ReservasiController as AdminReservasiController;
+
 
 
 // Controller Panel Kasir
 use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
 use App\Http\Controllers\Kasir\InvoiceController as KasirInvoiceController;
 
+// ⬇️ Tambahan untuk montir
+use App\Http\Controllers\Montir\MontirDashboardController;
+use App\Http\Controllers\Montir\MontirServisController;
 
 // Controller Panel Pelanggan
 use App\Http\Controllers\Pelanggan\DashboardController as PelangganDashboardController;
+use App\Http\Controllers\Pelanggan\ReservasiController;
+use App\Http\Controllers\Pelanggan\InvoiceController as PelangganInvoiceController;
+use App\Http\Controllers\Pelanggan\KendaraanController as PelangganKendaraanController;
+
 
 // --- Rute Halaman Publik ---
 Route::get('/', function () {
@@ -59,6 +68,22 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])->prefix('admin')->na
     Route::post('/servis/{servis}/sparepart', [\App\Http\Controllers\Admin\ServisController::class, 'storeSparepart'])->name('servis.sparepart.store');
     Route::delete('/servis/{servis}/sparepart/{sparepart}', [\App\Http\Controllers\Admin\ServisController::class, 'destroySparepart'])->name('servis.sparepart.destroy');
 
+    /* ==========================
+     *  BOOKING / RESERVASI (ADMIN)
+     * ========================== */
+    Route::get('/reservasis', [AdminReservasiController::class, 'index'])
+        ->name('reservasis.index');
+
+    Route::get('/reservasis/{reservasi}', [AdminReservasiController::class, 'show'])
+        ->name('reservasis.show');
+
+    Route::post('/reservasis/{reservasi}/approve', [AdminReservasiController::class, 'approve'])
+        ->name('reservasis.approve');
+
+    Route::post('/reservasis/{reservasi}/reject', [AdminReservasiController::class, 'reject'])
+        ->name('reservasis.reject');
+
+
     Route::resource('/invoices', InvoiceController::class)->only(['index', 'show', 'store']);
 
     // ⛔ TIDAK ADA lagi route payment di sini
@@ -66,9 +91,30 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])->prefix('admin')->na
 
 
 // --- Grup Rute HANYA UNTUK MONTIR ---
-Route::middleware(['auth', 'verified', 'check.role:montir'])->prefix('montir')->name('montir.')->group(function () {
-    // Route montir akan ditambahkan nanti
-});
+Route::middleware(['auth', 'verified', 'check.role:montir'])
+    ->prefix('montir')
+    ->name('montir.')
+    ->group(function () {
+
+        // Dashboard montir
+        Route::get('/dashboard', [MontirDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        // Daftar servis milik montir
+        Route::get('/servis', [MontirServisController::class, 'index'])
+            ->name('servis.index');
+
+        // Detail servis
+        Route::get('/servis/{servis}', [MontirServisController::class, 'show'])
+            ->name('servis.show');
+
+        // Update status servis
+        Route::post('/servis/{servis}/update-status',
+            [MontirServisController::class, 'updateStatus']
+        )->name('servis.update-status');
+
+    });
+
 
 
 // --- Grup Rute HANYA UNTUK KASIR ---
@@ -84,14 +130,83 @@ Route::middleware(['auth', 'verified', 'check.role:kasir'])
         // HANYA kasir yang punya route ini
         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
             ->name('invoices.payments.store');
-});
+    });
 
 
 
 // --- Grup Rute HANYA UNTUK PELANGGAN ---
-Route::middleware(['auth', 'verified', 'check.role:pelanggan'])->prefix('pelanggan')->name('pelanggan.')->group(function () {
-    Route::get('/dashboard', [PelangganDashboardController::class, 'index'])->name('dashboard');
-});
+Route::middleware(['auth', 'verified', 'check.role:pelanggan'])
+    ->prefix('pelanggan')
+    ->name('pelanggan.')
+    ->group(function () {
+
+        /* ==========================
+         *  DASHBOARD
+         * ========================== */
+        Route::get('/dashboard', [PelangganDashboardController::class, 'index'])
+            ->name('dashboard');
+
+
+        /* ==========================
+         *  RIWAYAT SERVIS
+         * ========================== */
+        Route::get('/servis', [\App\Http\Controllers\Pelanggan\ServisController::class, 'index'])
+            ->name('servis.index');
+
+        Route::get('/servis/{servis}', [\App\Http\Controllers\Pelanggan\ServisController::class, 'show'])
+            ->name('servis.show');
+
+
+        /* ==========================
+         *  BOOKING / RESERVASI SERVIS
+         * ========================== */
+
+        // list reservasi
+        Route::get('/reservasis', [ReservasiController::class, 'index'])
+            ->name('reservasis.index');
+
+        // form buat reservasi
+        Route::get('/reservasis/create', [ReservasiController::class, 'create'])
+            ->name('reservasis.create');
+
+        // simpan reservasi
+        Route::post('/reservasis', [ReservasiController::class, 'store'])
+            ->name('reservasis.store');
+
+        // detail reservasi
+        Route::get('/reservasis/{reservasi}', [ReservasiController::class, 'show'])
+            ->name('reservasis.show');
+
+        // pembatalan reservasi
+        Route::post('/reservasis/{reservasi}/cancel', [ReservasiController::class, 'cancel'])
+            ->name('reservasis.cancel');
+
+
+        /* ==========================
+         *  INVOICE & PEMBAYARAN PELANGGAN
+         * ========================== */
+
+        Route::get('/invoices', [PelangganInvoiceController::class, 'index'])
+            ->name('invoices.index');
+
+        Route::get('/invoices/{invoice}', [PelangganInvoiceController::class, 'show'])
+            ->name('invoices.show');
+
+
+        /* ==========================
+         *  KENDARAAN SAYA (CRUD)
+         * ========================== */
+        Route::resource('/kendaraans', PelangganKendaraanController::class)
+            ->names('kendaraans')
+            ->except(['show']);
+
+
+        // (optional) kalau nanti ingin detail kendaraan pelanggan:
+        // Route::get('/kendaraans/{kendaraan}', [PelangganKendaraanController::class, 'show'])
+        //     ->name('kendaraans.show');
+    });
+
+
 
 // --- Rute Profil (Bisa diakses semua peran) ---
 Route::middleware('auth')->group(function () {
