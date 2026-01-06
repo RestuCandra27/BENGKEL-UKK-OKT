@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Auth;
 // Import semua Controller yang dibutuhkan
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LandingController;
+
 
 // Controller Panel Admin
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -20,14 +22,13 @@ use App\Http\Controllers\Admin\ServisController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ReservasiController as AdminReservasiController;
-
-
+use App\Http\Controllers\Admin\LogAktivitasController;
 
 // Controller Panel Kasir
 use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
 use App\Http\Controllers\Kasir\InvoiceController as KasirInvoiceController;
 
-// ⬇️ Tambahan untuk montir
+// Controller Panel Montir
 use App\Http\Controllers\Montir\MontirDashboardController;
 use App\Http\Controllers\Montir\MontirServisController;
 
@@ -36,59 +37,98 @@ use App\Http\Controllers\Pelanggan\DashboardController as PelangganDashboardCont
 use App\Http\Controllers\Pelanggan\ReservasiController;
 use App\Http\Controllers\Pelanggan\InvoiceController as PelangganInvoiceController;
 use App\Http\Controllers\Pelanggan\KendaraanController as PelangganKendaraanController;
+use App\Http\Controllers\Pelanggan\PaymentController as PelangganPaymentController;
 
 
-// --- Rute Halaman Publik ---
-Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-    return view('welcome');
-});
+// --- Rute Halaman Publik (Landing Page Bengkel) ---
+Route::get('/', [LandingController::class, 'index'])
+    ->name('landing');
 
 // --- Rute Pengatur Lalu Lintas (Setelah Login) ---
 Route::get('/dashboard', [HomeController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
-// === GRUP RUTE YANG DIPERBAIKI ===
-
 // --- Grup Rute HANYA UNTUK ADMIN ---
-Route::middleware(['auth', 'verified', 'check.role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-    Route::resource('/users', UserController::class);
-    Route::resource('/pelanggan', PelangganController::class);
-    Route::resource('/layanans', LayananController::class);
-    Route::resource('/paket-servis', PaketServisController::class);
-    Route::resource('/spareparts', SparepartController::class);
-    Route::resource('/kendaraans', KendaraanController::class);
-    Route::resource('/pembelian-spareparts', PembelianSparepartController::class);
-    Route::resource('/servis', ServisController::class);
-    Route::post('/servis/{servis}/layanan', [\App\Http\Controllers\Admin\ServisController::class, 'storeLayanan'])->name('servis.layanan.store');
-    Route::delete('/servis/{servis}/layanan/{layanan}', [\App\Http\Controllers\Admin\ServisController::class, 'destroyLayanan'])->name('servis.layanan.destroy');
-    Route::post('/servis/{servis}/sparepart', [\App\Http\Controllers\Admin\ServisController::class, 'storeSparepart'])->name('servis.sparepart.store');
-    Route::delete('/servis/{servis}/sparepart/{sparepart}', [\App\Http\Controllers\Admin\ServisController::class, 'destroySparepart'])->name('servis.sparepart.destroy');
+Route::middleware(['auth', 'verified', 'check.role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    /* ==========================
-     *  BOOKING / RESERVASI (ADMIN)
-     * ========================== */
-    Route::get('/reservasis', [AdminReservasiController::class, 'index'])
-        ->name('reservasis.index');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/reservasis/{reservasi}', [AdminReservasiController::class, 'show'])
-        ->name('reservasis.show');
+        // MANAJEMEN USER
+        Route::resource('/users', UserController::class);
 
-    Route::post('/reservasis/{reservasi}/approve', [AdminReservasiController::class, 'approve'])
-        ->name('reservasis.approve');
+        // DATA MASTER
+        Route::resource('/pelanggan', PelangganController::class);
+        Route::resource('/layanans', LayananController::class);
+        Route::resource('/paket-servis', PaketServisController::class);
 
-    Route::post('/reservasis/{reservasi}/reject', [AdminReservasiController::class, 'reject'])
-        ->name('reservasis.reject');
+        // DATA SPAREPART (master)
+        Route::resource('/spareparts', SparepartController::class);
 
+        // STOK MASUK
+        Route::get('/stok-masuk', [PembelianSparepartController::class, 'index'])
+            ->name('stok-masuk.index');
+        Route::get('/stok-masuk/create', [PembelianSparepartController::class, 'create'])
+            ->name('stok-masuk.create');
+        Route::post('/stok-masuk', [PembelianSparepartController::class, 'store'])
+            ->name('stok-masuk.store');
+        Route::delete('/stok-masuk/{pembelianSparepart}', [PembelianSparepartController::class, 'destroy'])
+            ->name('stok-masuk.destroy');
 
-    Route::resource('/invoices', InvoiceController::class)->only(['index', 'show', 'store']);
+        // DATA KENDARAAN
+        Route::resource('/kendaraans', KendaraanController::class);
 
-    // ⛔ TIDAK ADA lagi route payment di sini
-});
+        // SERVIS
+        Route::resource('/servis', ServisController::class);
+        Route::post('/servis/{servis}/layanan', [ServisController::class, 'storeLayanan'])
+            ->name('servis.layanan.store');
+        Route::delete('/servis/{servis}/layanan/{layanan}', [ServisController::class, 'destroyLayanan'])
+            ->name('servis.layanan.destroy');
+        Route::post('/servis/{servis}/sparepart', [ServisController::class, 'storeSparepart'])
+            ->name('servis.sparepart.store');
+        Route::delete('/servis/{servis}/sparepart/{sparepart}', [ServisController::class, 'destroySparepart'])
+            ->name('servis.sparepart.destroy');
 
+        // BOOKING / RESERVASI (ADMIN)
+        Route::get('/reservasis', [AdminReservasiController::class, 'index'])
+            ->name('reservasis.index');
+        Route::get('/reservasis/{reservasi}', [AdminReservasiController::class, 'show'])
+            ->name('reservasis.show');
+        Route::post('/reservasis/{reservasi}/approve', [AdminReservasiController::class, 'approve'])
+            ->name('reservasis.approve');
+        Route::post('/reservasis/{reservasi}/reject', [AdminReservasiController::class, 'reject'])
+            ->name('reservasis.reject');
+
+        // INVOICE (ADMIN)
+        Route::resource('/invoices', InvoiceController::class)->only(['index', 'show', 'store']);
+
+        // CETAK NOTA PEMBAYARAN (ADMIN)
+        Route::get('/invoices/{invoice}/nota', [InvoiceController::class, 'nota'])
+            ->name('invoices.nota');
+
+        // KONFIRMASI PEMBAYARAN (ADMIN)
+        Route::post('/payments/{payment}/confirm', [PaymentController::class, 'confirm'])
+            ->name('payments.confirm');
+
+        
+
+        // LOG AKTIVITAS
+        Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])
+            ->name('log-aktivitas.index');
+
+                // PEMBAYARAN (ADMIN) - Verifikasi / Tolak
+        Route::get('/payments', [PaymentController::class, 'index'])
+            ->name('payments.index');
+        Route::get('/payments/{payment}', [PaymentController::class, 'show'])
+            ->name('payments.show');
+        Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])
+            ->name('payments.verify');
+        Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])
+            ->name('payments.reject');
+
+    });
 
 // --- Grup Rute HANYA UNTUK MONTIR ---
 Route::middleware(['auth', 'verified', 'check.role:montir'])
@@ -96,26 +136,32 @@ Route::middleware(['auth', 'verified', 'check.role:montir'])
     ->name('montir.')
     ->group(function () {
 
-        // Dashboard montir
         Route::get('/dashboard', [MontirDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // Daftar servis milik montir
         Route::get('/servis', [MontirServisController::class, 'index'])
             ->name('servis.index');
 
-        // Detail servis
         Route::get('/servis/{servis}', [MontirServisController::class, 'show'])
             ->name('servis.show');
 
-        // Update status servis
-        Route::post('/servis/{servis}/update-status',
-            [MontirServisController::class, 'updateStatus']
-        )->name('servis.update-status');
+        Route::post('/servis/{servis}/update-status', [MontirServisController::class, 'updateStatus'])
+            ->name('servis.update-status');
 
+        Route::post('servis/{servis}/riwayat', [MontirServisController::class, 'updateRiwayat'])
+            ->name('servis.update-riwayat');
+
+        Route::post('/servis/{servis}/layanan', [MontirServisController::class, 'storeLayanan'])
+            ->name('servis.layanan.store');
+        Route::delete('/servis/{servis}/layanan/{layanan}', [MontirServisController::class, 'destroyLayanan'])
+            ->name('servis.layanan.destroy');
+
+        // Montir tambah / hapus SPAREPART
+        Route::post('/servis/{servis}/sparepart', [MontirServisController::class, 'storeSparepart'])
+            ->name('servis.sparepart.store');
+        Route::delete('/servis/{servis}/sparepart/{sparepart}', [MontirServisController::class, 'destroySparepart'])
+            ->name('servis.sparepart.destroy');
     });
-
-
 
 // --- Grup Rute HANYA UNTUK KASIR ---
 Route::middleware(['auth', 'verified', 'check.role:kasir'])
@@ -123,16 +169,18 @@ Route::middleware(['auth', 'verified', 'check.role:kasir'])
     ->name('kasir.')
     ->group(function () {
 
-        Route::get('/dashboard', [KasirDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/invoices', [KasirInvoiceController::class, 'index'])->name('invoices.index');
-        Route::get('/invoices/{invoice}', [KasirInvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('/dashboard', [KasirDashboardController::class, 'index'])
+            ->name('dashboard');
 
-        // HANYA kasir yang punya route ini
+        Route::get('/invoices', [KasirInvoiceController::class, 'index'])
+            ->name('invoices.index');
+        Route::get('/invoices/{invoice}', [KasirInvoiceController::class, 'show'])
+            ->name('invoices.show');
+
+        // Hanya kasir yang boleh input pembayaran
         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
             ->name('invoices.payments.store');
     });
-
-
 
 // --- Grup Rute HANYA UNTUK PELANGGAN ---
 Route::middleware(['auth', 'verified', 'check.role:pelanggan'])
@@ -140,80 +188,64 @@ Route::middleware(['auth', 'verified', 'check.role:pelanggan'])
     ->name('pelanggan.')
     ->group(function () {
 
-        /* ==========================
-         *  DASHBOARD
-         * ========================== */
         Route::get('/dashboard', [PelangganDashboardController::class, 'index'])
             ->name('dashboard');
 
-
-        /* ==========================
-         *  RIWAYAT SERVIS
-         * ========================== */
+        // Riwayat servis
         Route::get('/servis', [\App\Http\Controllers\Pelanggan\ServisController::class, 'index'])
             ->name('servis.index');
-
         Route::get('/servis/{servis}', [\App\Http\Controllers\Pelanggan\ServisController::class, 'show'])
             ->name('servis.show');
 
-
-        /* ==========================
-         *  BOOKING / RESERVASI SERVIS
-         * ========================== */
-
-        // list reservasi
+        // Reservasi
         Route::get('/reservasis', [ReservasiController::class, 'index'])
             ->name('reservasis.index');
-
-        // form buat reservasi
         Route::get('/reservasis/create', [ReservasiController::class, 'create'])
             ->name('reservasis.create');
-
-        // simpan reservasi
         Route::post('/reservasis', [ReservasiController::class, 'store'])
             ->name('reservasis.store');
-
-        // detail reservasi
         Route::get('/reservasis/{reservasi}', [ReservasiController::class, 'show'])
             ->name('reservasis.show');
-
-        // pembatalan reservasi
         Route::post('/reservasis/{reservasi}/cancel', [ReservasiController::class, 'cancel'])
             ->name('reservasis.cancel');
 
-
-        /* ==========================
-         *  INVOICE & PEMBAYARAN PELANGGAN
-         * ========================== */
-
+                // Invoice pelanggan
         Route::get('/invoices', [PelangganInvoiceController::class, 'index'])
             ->name('invoices.index');
-
         Route::get('/invoices/{invoice}', [PelangganInvoiceController::class, 'show'])
             ->name('invoices.show');
+                // Pelanggan kirim pembayaran mandiri
+        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'storeFromCustomer'])
+            ->name('invoices.payments.store');
 
 
-        /* ==========================
-         *  KENDARAAN SAYA (CRUD)
-         * ========================== */
+        // 💰 Pelanggan kirim pembayaran
+        Route::post('/invoices/{invoice}/payments', [PelangganPaymentController::class, 'store'])
+            ->name('invoices.payments.store');
+
+
+        // Kendaraan saya
         Route::resource('/kendaraans', PelangganKendaraanController::class)
             ->names('kendaraans')
             ->except(['show']);
-
-
-        // (optional) kalau nanti ingin detail kendaraan pelanggan:
-        // Route::get('/kendaraans/{kendaraan}', [PelangganKendaraanController::class, 'show'])
-        //     ->name('kendaraans.show');
     });
 
-
-
+// --- Rute Profil (Bisa diakses semua peran) ---
 // --- Rute Profil (Bisa diakses semua peran) ---
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // HALAMAN LIHAT PROFIL
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+
+    // HALAMAN EDIT PROFIL
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    // SIMPAN PERUBAHAN PROFIL
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // HAPUS AKUN (kalau dipakai)
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
 
 // --- Rute Autentikasi ---
 require __DIR__ . '/auth.php';

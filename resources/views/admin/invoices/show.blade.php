@@ -5,9 +5,17 @@
                 {{ __('Detail Invoice') }}
             </h2>
 
-            <a href="{{ route('admin.invoices.index') }}" class="btn btn-secondary btn-sm">
-                &laquo; Kembali
-            </a>
+            <div>
+                <a href="{{ route('admin.invoices.nota', $invoice->id) }}"
+                   class="btn btn-outline-primary btn-sm"
+                   target="_blank">
+                    Cetak Nota
+                </a>
+
+                <a href="{{ route('admin.invoices.index') }}" class="btn btn-secondary btn-sm">
+                    &laquo; Kembali
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -41,7 +49,7 @@
             </p>
 
             @php
-                $subtotal    = ( $invoice->total_biaya_layanan ?? 0 ) + ( $invoice->total_biaya_sparepart ?? 0 );
+                $subtotal    = ($invoice->total_biaya_layanan ?? 0) + ($invoice->total_biaya_sparepart ?? 0);
                 $totalDiskon = max($subtotal - $invoice->total_tagihan, 0);
             @endphp
 

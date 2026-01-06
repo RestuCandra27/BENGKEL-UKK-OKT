@@ -4,16 +4,17 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Input Stok Masuk') }}
             </h2>
-            <a href="{{ route('admin.pembelian-spareparts.index') }}" class="btn btn-secondary">Kembali</a>
+            <a href="{{ route('admin.stok-masuk.index') }}" class="btn btn-secondary">Kembali</a>
         </div>
     </x-slot>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-body">
 
             @if ($errors->any())
             <div class="alert alert-danger">
-                <ul>
+                <strong>Terjadi kesalahan:</strong>
+                <ul class="mb-0 mt-2">
                     @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                     @endforeach
@@ -21,7 +22,7 @@
             </div>
             @endif
 
-            <form action="{{ route('admin.pembelian-spareparts.store') }}" method="POST">
+            <form action="{{ route('admin.stok-masuk.store') }}" method="POST">
                 @csrf
 
                 {{-- Pilih Sparepart --}}
@@ -40,14 +41,15 @@
                 {{-- Tanggal Masuk --}}
                 <div class="form-group">
                     <label>Tanggal Masuk</label>
-                    {{-- value default hari ini --}}
-                    <input type="date" name="tanggal_masuk" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    <input type="date" name="tanggal_masuk" class="form-control"
+                        value="{{ old('tanggal_masuk', date('Y-m-d')) }}" required>
                 </div>
 
                 {{-- Jumlah Masuk --}}
                 <div class="form-group">
                     <label>Jumlah Masuk (Pcs)</label>
-                    <input type="number" name="jumlah_masuk" class="form-control" min="1" required>
+                    <input type="number" name="jumlah_masuk" class="form-control"
+                        min="1" value="{{ old('jumlah_masuk') }}" required>
                 </div>
 
                 <div class="row">
@@ -55,22 +57,34 @@
                         {{-- Harga Beli --}}
                         <div class="form-group">
                             <label>Harga Beli Satuan (Rp)</label>
-                            <input type="number" name="harga_beli" class="form-control" min="0" required>
-                            <small class="text-muted">Harga modal per barang.</small>
+                            <input type="number" name="harga_beli" class="form-control"
+                                min="0" value="{{ old('harga_beli') }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        {{-- Harga Jual --}}
+                        {{-- 🔹 Harga Jual Satuan --}}
                         <div class="form-group">
                             <label>Harga Jual Satuan (Rp)</label>
-                            <input type="number" name="harga_jual" class="form-control" min="0" required>
-                            <small class="text-muted">Harga untuk pelanggan (Batch ini).</small>
+                            <input type="number" name="harga_jual" class="form-control"
+                                min="0" value="{{ old('harga_jual') }}" required>
+                            <small class="text-muted">Harga jual ke pelanggan.</small>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Simpan Stok</button>
-                <a href="{{ route('admin.pembelian-spareparts.index') }}" class="btn btn-secondary">Batal</a>
+                {{-- Keterangan (opsional) --}}
+                <div class="form-group">
+                    <label>Keterangan (Opsional)</label>
+                    <textarea name="keterangan" class="form-control"
+                        placeholder="Contoh: Pembelian dari Supplier A, koreksi stok, dll.">{{ old('keterangan') }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Simpan Stok
+                </button>
+                <a href="{{ route('admin.stok-masuk.index') }}" class="btn btn-secondary">
+                    Batal
+                </a>
             </form>
 
         </div>

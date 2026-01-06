@@ -6,99 +6,208 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Bengkel Candra') }}</title>
 
+    {{-- FONT --}}
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+
+    {{-- ADMINLTE + ICON --}}
     <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('dist/css/adminlte.min.css') }}">
 
-    {{-- KODE CSS KUSTOM (DARK MODE) --}}
+    {{-- THEME CANDRA GARAGE (DARK + NEON CYAN/PURPLE) --}}
     <style>
-        /* Perbaikan untuk body agar tidak ada "batang putih" */
-        body,
-        .content-wrapper,
-        .main-footer,
-        .main-header,
-        .card {
-            background-color: #1f2937 !important;
-            color: #d1d5db !important;
+        :root {
+            --bg-body: #020617;
+            --bg-wrapper: #020617;
+            --bg-sidebar: #020617;
+            --bg-card: #0f172a;
+            --bg-card-soft: #111827;
+            --accent: #22d3ee;
+            --accent-2: #a855f7;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-soft: rgba(148, 163, 184, 0.25);
         }
 
-        .main-header,
+        /* ====== BASE LAYOUT ====== */
+
+        body {
+            background: radial-gradient(circle at top, #1f2937 0, #020617 40%, #020617 100%);
+            color: var(--text-main);
+        }
+
+        .content-wrapper {
+            background: radial-gradient(circle at top, #020617 0, #020617 55%, #020617 100%) !important;
+            color: var(--text-main);
+        }
+
+        .main-header {
+            background: linear-gradient(to right, #020617, #020617) !important;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25) !important;
+            color: var(--text-main) !important;
+        }
+
+        .navbar-nav .nav-link {
+            color: var(--text-main) !important;
+        }
+
+        .main-sidebar {
+            background: radial-gradient(circle at top, #020617, #020617 55%, #020617 100%) !important;
+        }
+
+        .brand-link {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+        }
+
+        .brand-link .brand-text {
+            color: #f9fafb !important;
+            font-weight: 600;
+            letter-spacing: .08em;
+        }
+
+        /* ====== SIDEBAR MENU ====== */
+
+        .nav-sidebar .nav-item .nav-link {
+            color: var(--text-muted) !important;
+            border-radius: .5rem;
+            margin: 2px 6px;
+        }
+
+        .nav-sidebar .nav-item .nav-link:hover {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: var(--text-main) !important;
+        }
+
+        .nav-sidebar .nav-item .nav-link.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+            color: #fff !important;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+        }
+
+        .nav-header {
+            color: #6b7280 !important;
+            font-size: .75rem;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            margin-top: .75rem;
+        }
+
+        /* ====== CARD & SMALL BOX ====== */
+
+        .card,
+        .small-box {
+            background: radial-gradient(circle at top left, rgba(148, 163, 184, 0.14), var(--bg-card-soft)) !important;
+            border-radius: 1rem !important;
+            border: 1px solid var(--border-soft) !important;
+            color: var(--text-main) !important;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+
         .card-header {
-            border-bottom: 1px solid #4b5563 !important;
+            background: transparent !important;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16) !important;
         }
 
+        /* ====== PAGE TITLE (HEADER SETIAP HALAMAN) ====== */
         .content-header h1,
-        .card-title,
-        .card-body h3,
-        .content-wrapper .h2,
-        .leading-tight {
+        .content-header h2,
+        .content-header .h1,
+        .content-header .h2,
+        .page-title-main {
+            color: #f9fafb !important;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
+        /* garis kecil di bawah judul biar lebih tegas */
+        .page-title-main::after,
+        .content-header h1::after,
+        .content-header h2::after {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 2px;
+            margin-top: .3rem;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        }
+
+        .card-title {
+            color: #f9fafb !important;
+            font-weight: 600;
+        }
+
+        .card-body {
+            color: var(--text-main) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* SMALL BOX COLOR */
+        .small-box.bg-info,
+        .small-box.bg-success,
+        .small-box.bg-warning,
+        .small-box.bg-danger,
+        .small-box {
+            background: radial-gradient(circle at top left,
+                    rgba(56, 189, 248, 0.30),
+                    var(--bg-card-soft)) !important;
             color: #f9fafb !important;
         }
 
+        .small-box .inner h3 {
+            font-weight: 700;
+        }
+
+        .small-box .icon>i {
+            color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .small-box-footer {
+            background: rgba(15, 23, 42, 0.85) !important;
+            border-radius: 0 0 1rem 1rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.3);
+            color: var(--text-main) !important;
+        }
+
+        /* ====== TABLE ====== */
+
         .table {
-            color: #d1d5db !important;
+            color: var(--text-main) !important;
         }
 
         .table-bordered th,
         .table-bordered td {
-            border-color: #4b5563 !important;
+            border-color: rgba(55, 65, 81, 0.9) !important;
         }
 
         .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(55, 65, 81, 0.5) !important;
+            background-color: rgba(31, 41, 55, 0.8) !important;
         }
 
-        /* Perbaikan untuk table hover (agar teks tidak hilang) */
         .table-hover tbody tr:hover {
-            background-color: #374151 !important;
-            /* Warna abu-abu yang lebih gelap */
+            background-color: #1f2937 !important;
             color: #f9fafb !important;
-            /* Paksa teks tetap putih */
         }
 
-        .main-sidebar {
-            background-color: #111827 !important;
+        /* ====== CONTENT HEADER ====== */
+
+        .content-header {
+            border-bottom: none;
+            padding-bottom: .5rem;
         }
 
-        .nav-sidebar .nav-item .nav-link.active {
-            background-color: #3b82f6 !important;
-            color: #fff !important;
-        }
-
-        .nav-sidebar .nav-item .nav-link,
-        .nav-header {
-            color: #9ca3af !important;
-        }
-
-        .nav-sidebar .nav-item .nav-link:hover {
-            background-color: #374151 !important;
-        }
-
-        .brand-link .brand-text {
-            color: #fff !important;
-        }
-
-        .navbar-nav .nav-link {
-            color: #d1d5db !important;
-        }
-
-        .small-box {
-            background-color: #374151;
-            color: #f9fafb;
-        }
-
-        .small-box .icon>i {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .small-box-footer {
-            background-color: rgba(0, 0, 0, 0.2);
+        .content-header .lead,
+        .content-header p {
+            color: var(--text-muted) !important;
         }
     </style>
-    {{-- AKHIR KODE CSS KUSTOM --}}
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -106,46 +215,88 @@
 <body class="hold-transition sidebar-mini">
     <div class="wrapper">
 
-        {{-- NAVIGASI ATAS (NAVBAR) --}}
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        {{-- NAVBAR ATAS --}}
+        <nav class="main-header navbar navbar-expand navbar-dark">
+            {{-- Left --}}
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                        <i class="fas fa-bars"></i>
+                    </a>
                 </li>
             </ul>
 
+            {{-- Right --}}
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
-                        {{ Auth::user()->nama }} <i class="far fa-user"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <a href="{{ route('profile.edit') }}" class="dropdown-item">
-                            Profil Saya
+                <ul class="navbar-nav ml-auto">
+                    @php
+                    $user = Auth::user();
+                    $photoUrl = $user->profile_photo_path
+                    ? asset('storage/' . $user->profile_photo_path)
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($user->nama ?? $user->name) . '&background=111827&color=f9fafb';
+                    @endphp
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link d-flex align-items-center" data-toggle="dropdown" href="#" style="gap:.5rem;">
+                            <img src="{{ $photoUrl }}"
+                                alt="Foto Profil"
+                                style="width:28px;height:28px;border-radius:999px;object-fit:cover;border:2px solid rgba(255,255,255,0.8);">
+
+                            <span>{{ $user->nama ?? $user->name }}</span>
+                            <i class="fas fa-chevron-down" style="font-size:.7rem;"></i>
                         </a>
-                        <div class="dropdown-divider"></div>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <a href="{{ route('logout') }}" class="dropdown-item"
-                                onclick="event.preventDefault(); this.closest('form').submit();">
-                                Logout
+
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                            <a href="{{ route('profile.show') }}" class="dropdown-item">
+                                Profil Saya
                             </a>
-                        </form>
-                    </div>
-                </li>
+                            <div class="dropdown-divider"></div>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <a href="{{ route('logout') }}" class="dropdown-item"
+                                    onclick="event.preventDefault(); this.closest('form').submit();">
+                                    Logout
+                                </a>
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+
             </ul>
         </nav>
 
-        {{-- MENU KIRI (SIDEBAR) --}}
+        {{-- SIDEBAR --}}
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <a href="{{ route('dashboard') }}" class="brand-link">
-                <span class="brand-text font-weight-light">Bengkel Candra</span>
+                <span class="brand-text font-weight-light">Candra Garage</span>
             </a>
+
             <div class="sidebar">
                 <nav class="mt-2">
-                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    @php
+                    $role = auth()->user()->role ?? null;
 
-                        {{-- MENU DASHBOARD (UMUM UNTUK SEMUA ROLE) --}}
+                    // Sparepart group
+                    $isSparepartMenuActive =
+                    request()->routeIs('admin.spareparts.*') ||
+                    request()->routeIs('admin.stok-masuk.*');
+
+                    // 🔹 GROUP TRANSAKSI SERVIS
+                    $isTransaksiMenuActive =
+                    request()->routeIs('admin.servis.*') ||
+                    request()->routeIs('admin.reservasis.*');
+
+                    // grup Invoice & Pembayaran
+                    $isInvoiceMenuActive =
+                    request()->routeIs('admin.invoices.*') ||
+                    request()->routeIs('admin.payments.*');
+                    @endphp
+
+
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+                        data-accordion="false">
+
+                        {{-- DASHBOARD (SEMUA ROLE KECUALI PELANGGAN) --}}
                         @if (auth()->check() && auth()->user()->role !== 'pelanggan')
                         <li class="nav-item">
                             <a href="{{ route('dashboard') }}"
@@ -156,16 +307,11 @@
                         </li>
                         @endif
 
-                        @php
-                        $role = auth()->user()->role ?? null;
-                        @endphp
-
                         {{-- ===================== --}}
-                        {{-- MENU KHUSUS ADMIN     --}}
+                        {{-- MENU ADMIN            --}}
                         {{-- ===================== --}}
                         @if ($role === 'admin')
-                        {{-- MANAJEMEN USER --}}
-                        <li class="nav-header">MANAJEMEN USER</li>
+                        <li class="nav-header">Manajemen User</li>
                         <li class="nav-item">
                             <a href="{{ route('admin.users.index') }}"
                                 class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
@@ -174,8 +320,7 @@
                             </a>
                         </li>
 
-                        {{-- DATA MASTER --}}
-                        <li class="nav-header">DATA MASTER</li>
+                        <li class="nav-header">Data Master</li>
 
                         <li class="nav-item">
                             <a href="{{ route('admin.pelanggan.index') }}"
@@ -201,12 +346,30 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('admin.spareparts.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.spareparts.*') ? 'active' : '' }}">
+                        <li class="nav-item {{ $isSparepartMenuActive ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ $isSparepartMenuActive ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-cogs"></i>
-                                <p>Data Sparepart</p>
+                                <p>
+                                    Sparepart & Stok
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.spareparts.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.spareparts.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Data Sparepart</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.stok-masuk.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.stok-masuk.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Stok Masuk</p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
 
                         <li class="nav-item">
@@ -217,41 +380,85 @@
                             </a>
                         </li>
 
-                        {{-- INVENTORI & STOK --}}
-                        <li class="nav-header">INVENTORI & STOK</li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.pembelian-spareparts.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.pembelian-spareparts.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-boxes"></i>
-                                <p>Stok Masuk (Pembelian)</p>
-                            </a>
-                        </li>
+                        <li class="nav-header">Transaksi Bengkel</li>
 
-                        {{-- TRANSAKSI BENGKEL --}}
-                        <li class="nav-header">TRANSAKSI BENGKEL</li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.servis.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.servis.*') ? 'active' : '' }}">
+                        {{-- 🔹 Grup: Servis & Reservasi --}}
+                        <li class="nav-item {{ $isTransaksiMenuActive ? 'menu-open' : '' }}">
+                            <a href="#"
+                                class="nav-link {{ $isTransaksiMenuActive ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-tools"></i>
-                                <p>Pendaftaran Servis</p>
+                                <p>
+                                    Servis & Reservasi
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+
+                            <ul class="nav nav-treeview">
+                                {{-- Pendaftaran Servis --}}
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.servis.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.servis.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Pendaftaran Servis</p>
+                                    </a>
+                                </li>
+
+                                {{-- Reservasi Servis --}}
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.reservasis.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.reservasis.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Reservasi Servis</p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
 
+                        {{-- INVOICE & PEMBAYARAN --}}
+                        <li class="nav-item {{ $isInvoiceMenuActive ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ $isInvoiceMenuActive ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                                <p>
+                                    Invoice & Pembayaran
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                {{-- Data Invoice --}}
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.invoices.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Data Invoice</p>
+                                    </a>
+                                </li>
+
+                                {{-- Pembayaran (verifikasi) --}}
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.payments.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Pembayaran</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+
+
+                        <li class="nav-header">Monitoring</li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.invoices.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-file-invoice"></i>
-                                <p>Data Invoice</p>
+                            <a href="{{ route('admin.log-aktivitas.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.log-aktivitas.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-clipboard-list"></i>
+                                <p>Log Aktivitas</p>
                             </a>
                         </li>
                         @endif
 
-                        {{-- ===================== --}}
-                        {{-- MENU KHUSUS KASIR     --}}
-                        {{-- ===================== --}}
+                        {{-- MENU KASIR --}}
                         @if ($role === 'kasir')
-                        <li class="nav-header">TRANSAKSI</li>
-
+                        <li class="nav-header">Transaksi</li>
                         <li class="nav-item">
                             <a href="{{ route('kasir.invoices.index') }}"
                                 class="nav-link {{ request()->routeIs('kasir.invoices.*') ? 'active' : '' }}">
@@ -261,9 +468,9 @@
                         </li>
                         @endif
 
-                        {{-- MENU KHUSUS PELANGGAN --}}
+                        {{-- MENU PELANGGAN --}}
                         @if ($role === 'pelanggan')
-                        <li class="nav-header">SERVIS SAYA</li>
+                        <li class="nav-header">Servis Saya</li>
 
                         <li class="nav-item">
                             <a href="{{ route('pelanggan.dashboard') }}"
@@ -306,17 +513,24 @@
                         </li>
                         @endif
 
-
-
-                        {{-- (Nanti kalau mau, bisa tambah menu khusus montir/pelanggan di sini) --}}
+                        {{-- MENU MONTIR --}}
+                        @if ($role === 'montir')
+                        <li class="nav-header">Servis</li>
+                        <li class="nav-item">
+                            <a href="{{ route('montir.servis.index') }}"
+                                class="nav-link {{ request()->routeIs('montir.servis.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-wrench"></i>
+                                <p>Servis Saya</p>
+                            </a>
+                        </li>
+                        @endif
 
                     </ul>
-
                 </nav>
             </div>
         </aside>
 
-        {{-- AREA KONTEN UTAMA --}}
+        {{-- CONTENT --}}
         <div class="content-wrapper">
             @if (isset($header))
             <header>
@@ -329,20 +543,21 @@
             @endif
 
             <main class="content">
-                <div class="container-fluid pt-3">
+                <div class="container-fluid pt-3 pb-3">
                     {{ $slot }}
                 </div>
             </main>
         </div>
 
-        <!-- {{-- FOOTER (BAGIAN PALING BAWAH) --}}
-        <footer class="main-footer">
-            <strong>Copyright &copy; 2024 <a href="#">Restu Candra Novianto</a>.</strong> All rights reserved.
-        </footer> -->
+        {{-- FOOTER (opsional kalau mau diaktifkan nanti) --}}
+        {{--
+    <footer class="main-footer">
+        <strong>&copy; {{ date('Y') }} Candra Garage.</strong> Semua hak dilindungi.
+        </footer>
+        --}}
     </div>
-    {{-- Akhir dari div.wrapper --}}
 
-    {{-- SKRIP JAVASCRIPT --}}
+    {{-- JS --}}
     <script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>

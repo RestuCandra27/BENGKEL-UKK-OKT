@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Reservasi;
 use Illuminate\Http\Request;
+use App\Models\Servis;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ReservasiController extends Controller
 {
@@ -26,28 +29,45 @@ class ReservasiController extends Controller
      */
     public function show(Reservasi $reservasi)
     {
-        $reservasi->load(['user', 'kendaraan']);
+        $montirs = User::where('role', 'montir')
+            ->orderBy('nama', 'asc')
+            ->get();
 
-        return view('admin.reservasis.show', compact('reservasi'));
+        return view('admin.reservasis.show', compact('reservasi', 'montirs'));
     }
 
     /**
      * Setujui reservasi.
      */
-    public function approve(Reservasi $reservasi)
+    public function approve(Request $request, Reservasi $reservasi)
     {
-        // Kalau sudah dibatalkan, jangan bisa disetujui
-        if ($reservasi->status === 'dibatalkan') {
-            return back()->with('error', 'Reservasi yang sudah dibatalkan tidak bisa disetujui.');
-        }
-
-        $reservasi->update([
-            'status' => 'disetujui',
+        $request->validate([
+            'montir_id' => ['required', 'exists:users,id'],
         ]);
 
+        DB::transaction(function () use ($request, $reservasi) {
+
+            // 1. Update status reservasi
+            $reservasi->update([
+                'status' => 'disetujui',
+            ]);
+
+            // 2. Buat servis untuk montir
+            Servis::create([
+                'reservasi_id'   => $reservasi->id,      // hubungkan ke reservasi
+                'user_id'        => $reservasi->user_id,
+                'kendaraan_id'   => $reservasi->kendaraan_id ?? null,
+                'montir_id'      => $request->montir_id,
+                'keluhan'        => $reservasi->keluhan,
+                'tanggal_servis' => $reservasi->tanggal ?? now()->toDateString(),
+                'status_servis'  => 'menunggu',
+                'total_biaya'    => 0,
+            ]);
+        });
+
         return redirect()
-            ->route('admin.reservasis.show', $reservasi->id)
-            ->with('success', 'Reservasi berhasil disetujui.');
+            ->route('admin.reservasis.index')
+            ->with('success', 'Reservasi disetujui dan servis sudah dibuat untuk montir.');
     }
 
     /**

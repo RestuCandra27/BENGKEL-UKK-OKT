@@ -27,4 +27,8 @@ class Reservasi extends Model
     {
         return $this->belongsTo(Kendaraan::class);
     }
+    public function servis()
+    {
+        return $this->hasOne(Servis::class, 'reservasi_id');
+    }
 }

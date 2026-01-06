@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Servis;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
@@ -12,19 +13,26 @@ class InvoiceController extends Controller
     /** LIST INVOICE */
     public function index()
     {
-        $invoices = Invoice::with('pelanggan', 'servis')
+        $invoices = Invoice::with(['pelanggan', 'servis'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return view('admin.invoices.index', compact('invoices'));
     }
 
-    /** TAMPILKAN DETAIL INVOICE */
+    /** TAMPILKAN DETAIL INVOICE (ADMIN) */
     public function show($id)
     {
-        $invoice = Invoice::with(['pelanggan', 'payments'])->findOrFail($id);
+        $invoice = Invoice::with([
+                'pelanggan',
+                // include detail_layanans & spareparts, TANPA .layanan
+                'servis.detail_layanans',
+                'servis.spareparts',
+                'payments',
+            ])
+            ->findOrFail($id);
 
-        // Total yang sudah dibayar & sisa tagihan (dipakai di view)
+        // Total sudah dibayar & sisa tagihan
         $totalBayar  = $invoice->payments->sum('jumlah_bayar');
         $sisaTagihan = max($invoice->total_tagihan - $totalBayar, 0);
 
@@ -39,35 +47,33 @@ class InvoiceController extends Controller
         ]);
 
         // Ambil servis beserta detail layanan, sparepart, dan pelanggan
-        $servis = Servis::with(['detail_layanans', 'detail_spareparts', 'pelanggan'])
+        $servis = Servis::with(['detail_layanans', 'spareparts', 'pelanggan'])
             ->findOrFail($request->servis_id);
 
-        // ⛔ CEK: jika tidak ada layanan dan tidak ada sparepart → TIDAK BOLEH buat invoice
-        if ($servis->detail_layanans->isEmpty() && $servis->detail_spareparts->isEmpty()) {
+        // Cek minimal 1 layanan atau sparepart
+        if ($servis->detail_layanans->isEmpty() && $servis->spareparts->isEmpty()) {
             return back()
                 ->with('error', 'Tidak bisa membuat invoice. Tambahkan minimal satu layanan atau sparepart pada servis terlebih dahulu.')
                 ->withInput();
         }
 
-        // HITUNG total biaya layanan (termasuk yang asalnya dari paket servis, karena sudah masuk detail_layanans)
+        // Total biaya layanan
         $totalLayanan = $servis->detail_layanans->sum('biaya_standar');
 
-        // HITUNG total biaya sparepart
-        $totalSparepart = 0;
-        foreach ($servis->detail_spareparts as $sp) {
-            $totalSparepart += $sp->pivot->jumlah_digunakan * $sp->pivot->harga_saat_digunakan;
-        }
+        // Total biaya sparepart: jumlah * harga_satuan
+        $totalSparepart = $servis->spareparts->sum(function ($sp) {
+            return ($sp->pivot->jumlah ?? 0) * ($sp->pivot->harga_satuan ?? 0);
+        });
 
         $subtotal = $totalLayanan + $totalSparepart;
 
-        // Jaga-jaga kalau subtotal masih 0
         if ($subtotal <= 0) {
             return back()
                 ->with('error', 'Total tagihan masih 0. Pastikan layanan atau sparepart pada servis sudah diatur dengan benar.')
                 ->withInput();
         }
 
-        // 🔥 DISKON BERDASARKAN JENIS MEMBER PELANGGAN
+        // Diskon berdasarkan jenis member
         $jenisMember = $servis->pelanggan->jenis_member ?? 'Reguler';
 
         $diskonLayananPersen   = 0;
@@ -98,8 +104,38 @@ class InvoiceController extends Controller
             'status_pembayaran'     => 'Belum Lunas',
         ]);
 
+        // LOG AKTIVITAS
+        ActivityLogger::log(
+            'Buat invoice',
+            'Invoice',
+            $invoice->id,
+            [
+                'servis_id'        => $servis->id,
+                'pelanggan'        => $servis->pelanggan->nama ?? '-',
+                'total_layanan'    => $totalLayanan,
+                'total_sparepart'  => $totalSparepart,
+                'total_tagihan'    => $totalSetelahDiskon,
+                'member'           => $jenisMember,
+            ]
+        );
+
         return redirect()
             ->route('admin.invoices.show', $invoice->id)
             ->with('success', 'Invoice berhasil dibuat.');
+    }
+
+    /** CETAK NOTA PEMBAYARAN (ADMIN) */
+    public function nota($id)
+    {
+        $invoice = Invoice::with([
+                'pelanggan',
+                // perhatikan: TIDAK ada ".layanan" di sini
+                'servis.detail_layanans',
+                'servis.spareparts',
+                'payments',
+            ])
+            ->findOrFail($id);
+
+        return view('admin.invoices.nota', compact('invoice'));
     }
 }

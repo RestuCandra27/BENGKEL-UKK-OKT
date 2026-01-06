@@ -15,45 +15,77 @@ class Servis extends Model
         'user_id',
         'kendaraan_id',
         'montir_id',
+        'reservasi_id',
         'keluhan',
         'catatan_montir',
         'tanggal_servis',
         'status_servis', // menunggu, dikerjakan, selesai, dibayar, dibatalkan
-        'total_biaya'
+        'total_biaya',
     ];
 
-    // --- RELASI UTAMA ---
+    protected $casts = [
+        'tanggal_servis' => 'date',
+        'total_biaya'    => 'integer',
+    ];
 
+    // ==========================
+    // RELASI UTAMA
+    // ==========================
+
+    // Pelanggan yang melakukan servis
     public function pelanggan()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    // Kendaraan yang diservis
     public function kendaraan()
     {
         return $this->belongsTo(Kendaraan::class, 'kendaraan_id');
     }
 
+    // Montir yang menangani servis
     public function montir()
     {
         return $this->belongsTo(User::class, 'montir_id');
     }
 
-    // --- RELASI DETAIL (PIVOT) ---
+    public function reservasi()
+    {
+        return $this->belongsTo(Reservasi::class, 'reservasi_id');
+    }
 
-    // Mengambil daftar Layanan yang dipilih untuk servis ini
+
+    // ==========================
+    // RELASI DETAIL (PIVOT)
+    // ==========================
+
+    // Daftar layanan yang dipilih untuk servis ini
     public function detail_layanans()
     {
         return $this->belongsToMany(Layanan::class, 'detail_servis_layanans', 'servis_id', 'layanan_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
-    // Mengambil daftar Sparepart yang digunakan
-    // withPivot mengambil kolom tambahan di tabel penghubung
-    public function detail_spareparts()
+    // Daftar sparepart yang digunakan di servis ini
+    public function spareparts()
     {
-        return $this->belongsToMany(Sparepart::class, 'penggunaan_spareparts', 'servis_id', 'sparepart_id')
-                    ->withPivot('jumlah_digunakan', 'harga_saat_digunakan', 'pembelian_sparepart_id')
-                    ->withTimestamps();
+        return $this->belongsToMany(Sparepart::class, 'servis_sparepart')
+            ->withPivot(['jumlah', 'harga_satuan', 'subtotal'])
+            ->withTimestamps();
+    }
+
+    public function riwayat_kondisi()
+    {
+        return $this->hasOne(RiwayatKondisi::class, 'servis_id');
+    }
+
+    // ==========================
+    // HELPER (OPSIONAL)
+    // ==========================
+
+    public function getTanggalServisFormattedAttribute(): ?string
+    {
+        return $this->tanggal_servis?->format('d-m-Y');
     }
 }

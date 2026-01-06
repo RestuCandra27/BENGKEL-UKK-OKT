@@ -10,17 +10,17 @@
 
     {{-- FLASH MESSAGE --}}
     @if (session('success'))
-    <div class="alert alert-success mt-3">{{ session('success') }}</div>
+        <div class="alert alert-success mt-3">{{ session('success') }}</div>
     @endif
 
     @if (session('error'))
-    <div class="alert alert-danger mt-3">{{ session('error') }}</div>
+        <div class="alert alert-danger mt-3">{{ session('error') }}</div>
     @endif
 
     <div class="row mt-3">
         {{-- KOLOM KIRI: INFO SERVIS & STATUS --}}
         <div class="col-md-4">
-            <div class="card card-primary card-outline">
+            <div class="card card-primary card-outline mb-3">
                 <div class="card-header">
                     <h3 class="card-title">Info Pelanggan & Unit</h3>
                 </div>
@@ -44,7 +44,8 @@
 
                     {{-- FORM UPDATE STATUS --}}
                     <form action="{{ route('admin.servis.update', $servis->id) }}" method="POST">
-                        @csrf @method('PUT')
+                        @csrf
+                        @method('PUT')
 
                         <div class="form-group">
                             <label>Keluhan</label>
@@ -55,43 +56,57 @@
                             <label>Status Pengerjaan</label>
 
                             @if ($servis->status_servis === 'dibayar')
-                            <input type="text" class="form-control" value="Dibayar (Lunas)" disabled>
-                            <input type="hidden" name="status_servis" value="dibayar">
+                                <input type="text" class="form-control" value="Dibayar (Lunas)" disabled>
+                                <input type="hidden" name="status_servis" value="dibayar">
                             @else
-                            <select name="status_servis" class="form-control">
-                                <option value="menunggu" {{ $servis->status_servis == 'menunggu' ? 'selected' : '' }}>
-                                    Menunggu
-                                </option>
-                                <option value="dikerjakan" {{ $servis->status_servis == 'dikerjakan' ? 'selected' : '' }}>
-                                    Sedang Dikerjakan
-                                </option>
-                                <option value="selesai" {{ $servis->status_servis == 'selesai' ? 'selected' : '' }}>
-                                    Selesai (Siap Bayar)
-                                </option>
-                                <option value="dibatalkan" {{ $servis->status_servis == 'dibatalkan' ? 'selected' : '' }}>
-                                    Dibatalkan
-                                </option>
-                            </select>
+                                <select name="status_servis" class="form-control">
+                                    <option value="menunggu"   {{ $servis->status_servis == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
+                                    <option value="dikerjakan" {{ $servis->status_servis == 'dikerjakan' ? 'selected' : '' }}>Sedang Dikerjakan</option>
+                                    <option value="selesai"    {{ $servis->status_servis == 'selesai' ? 'selected' : '' }}>Selesai (Siap Bayar)</option>
+                                    <option value="dibatalkan" {{ $servis->status_servis == 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                                </select>
                             @endif
                         </div>
-
 
                         <button type="submit" class="btn btn-primary btn-block">Update Status</button>
                     </form>
                 </div>
             </div>
+
+            {{-- ✅ CARD BARU: CATATAN KONDISI & REKOMENDASI (READ ONLY) --}}
+            <div class="card card-outline card-secondary mb-3">
+                <div class="card-header">
+                    <h3 class="card-title">Catatan Kondisi & Rekomendasi</h3>
+                </div>
+                <div class="card-body">
+                    <strong>Catatan Saat Masuk</strong>
+                    <p class="text-muted">
+                        {{ optional($servis->riwayat_kondisi)->catatan_saat_masuk ?? '-' }}
+                    </p>
+
+                    <strong>Catatan Setelah Selesai</strong>
+                    <p class="text-muted">
+                        {{ optional($servis->riwayat_kondisi)->catatan_setelah_selesai ?? '-' }}
+                    </p>
+
+                    <strong>Rekomendasi Montir</strong>
+                    <p class="text-muted mb-0">
+                        {{ optional($servis->riwayat_kondisi)->rekomendasi_montir ?? '-' }}
+                    </p>
+                </div>
+            </div>
         </div>
 
-        {{-- KOLOM KANAN: DETAIL BIAYA (JASA & BARANG) --}}
+        {{-- KOLOM KANAN: JASA & SPAREPART --}}
         <div class="col-md-8">
 
-            {{-- TABEL JASA SERVIS --}}
+            {{-- JASA SERVIS --}}
             <div class="card card-outline card-success mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Jasa Servis</h3>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm">
+                    <table class="table table-sm mb-0">
                         <thead>
                             <tr>
                                 <th>Nama Layanan</th>
@@ -101,31 +116,37 @@
                         </thead>
                         <tbody>
                             @foreach($servis->detail_layanans as $layanan)
-                            <tr>
-                                <td>{{ $layanan->nama_layanan }}</td>
-                                <td class="text-right">
-                                    Rp {{ number_format($layanan->biaya_standar, 0, ',', '.') }}
-                                </td>
-                                <td class="text-center">
-                                    <form action="{{ route('admin.servis.layanan.destroy', [$servis->id, $layanan->id]) }}" method="POST">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Hapus jasa ini?')">x</button>
-                                    </form>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td>{{ $layanan->nama_layanan }}</td>
+                                    <td class="text-right">
+                                        Rp {{ number_format($layanan->biaya_standar, 0, ',', '.') }}
+                                    </td>
+                                    <td class="text-center">
+                                        <form action="{{ route('admin.servis.layanan.destroy', [$servis->id, $layanan->id]) }}"
+                                              method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="btn btn-xs btn-danger"
+                                                    onclick="return confirm('Hapus jasa ini?')">
+                                                x
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
                             @endforeach
 
-                            {{-- Form Tambah Layanan --}}
+                            {{-- Tambah JASA --}}
                             <tr class="bg-light">
                                 <form action="{{ route('admin.servis.layanan.store', $servis->id) }}" method="POST">
                                     @csrf
                                     <td colspan="2">
-                                        <select name="layanan_id" class="form-control form-control-sm" required>
+                                        <select name="layanan_id" class="form-control form-control-sm">
                                             <option value="">+ Tambah Jasa...</option>
                                             @foreach($all_layanans as $l)
-                                            <option value="{{ $l->id }}">
-                                                {{ $l->nama_layanan }} - Rp {{ number_format($l->biaya_standar) }}
-                                            </option>
+                                                <option value="{{ $l->id }}">
+                                                    {{ $l->nama_layanan }} - Rp {{ number_format($l->biaya_standar, 0, ',', '.') }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </td>
@@ -136,7 +157,8 @@
                                     </td>
                                 </form>
                             </tr>
-                            {{-- Form Tambah Paket Servis --}}
+
+                            {{-- Tambah PAKET SERVIS --}}
                             <tr class="bg-light">
                                 <form action="{{ route('admin.servis.layanan.store', $servis->id) }}" method="POST">
                                     @csrf
@@ -144,9 +166,9 @@
                                         <select name="paket_servis_id" class="form-control form-control-sm">
                                             <option value="">+ Tambah Paket Servis...</option>
                                             @foreach($all_paket_servis as $p)
-                                            <option value="{{ $p->id }}">
-                                                {{ $p->nama_paket ?? 'Paket #' . $p->id }}
-                                            </option>
+                                                <option value="{{ $p->id }}">
+                                                    {{ $p->nama_paket ?? 'Paket #' . $p->id }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </td>
@@ -157,19 +179,18 @@
                                     </td>
                                 </form>
                             </tr>
-
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {{-- TABEL SPAREPART --}}
+            {{-- SPAREPART DIGUNAKAN --}}
             <div class="card card-outline card-warning mb-3">
                 <div class="card-header">
                     <h3 class="card-title">Sparepart Digunakan</h3>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-sm">
+                    <table class="table table-sm mb-0">
                         <thead>
                             <tr>
                                 <th>Nama Barang</th>
@@ -180,41 +201,61 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($servis->detail_spareparts as $part)
-                            <tr>
-                                <td>{{ $part->nama_sparepart }}</td>
-                                <td>
-                                    Rp {{ number_format($part->pivot->harga_saat_digunakan, 0, ',', '.') }}
-                                </td>
-                                <td class="text-center">{{ $part->pivot->jumlah_digunakan }}</td>
-                                <td class="text-right">
-                                    Rp {{ number_format($part->pivot->harga_saat_digunakan * $part->pivot->jumlah_digunakan, 0, ',', '.') }}
-                                </td>
-                                <td class="text-center">
-                                    <form action="{{ route('admin.servis.sparepart.destroy', [$servis->id, $part->id]) }}" method="POST">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Hapus sparepart ini? Stok akan dikembalikan.')">x</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            @endforeach
+                            @forelse($servis->spareparts as $part)
+                                <tr>
+                                    <td>{{ $part->nama_sparepart }}</td>
+                                    <td>
+                                        Rp {{ number_format($part->pivot->harga_satuan, 0, ',', '.') }}
+                                    </td>
+                                    <td class="text-center">{{ $part->pivot->jumlah }}</td>
+                                    <td class="text-right">
+                                        Rp {{ number_format($part->pivot->subtotal, 0, ',', '.') }}
+                                    </td>
+                                    <td class="text-center">
+                                        <form action="{{ route('admin.servis.sparepart.destroy', [$servis->id, $part->id]) }}"
+                                              method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="btn btn-xs btn-danger"
+                                                    onclick="return confirm('Hapus sparepart ini? Stok akan dikembalikan.')">
+                                                x
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        Belum ada sparepart ditambahkan.
+                                    </td>
+                                </tr>
+                            @endforelse
 
-                            {{-- Form Tambah Sparepart --}}
+                            {{-- FORM TAMBAH SPAREPART --}}
                             <tr class="bg-light">
                                 <form action="{{ route('admin.servis.sparepart.store', $servis->id) }}" method="POST">
                                     @csrf
-                                    <td colspan="2">
+                                    <td>
                                         <select name="sparepart_id" class="form-control form-control-sm" required>
                                             <option value="">+ Tambah Sparepart...</option>
                                             @foreach($all_spareparts as $s)
-                                            <option value="{{ $s->id }}">
-                                                {{ $s->nama_sparepart }} ({{ $s->kode_sku }})
-                                            </option>
+                                                <option value="{{ $s->id }}">
+                                                    {{ $s->nama_sparepart }}
+                                                    — Rp {{ number_format($s->harga_jual ?? 0, 0, ',', '.') }}
+                                                    (Stok: {{ $s->stok ?? 0 }})
+                                                </option>
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td></td>
                                     <td>
-                                        <input type="number" name="jumlah" class="form-control form-control-sm" placeholder="Qty" min="1" value="1" required>
+                                        <input type="number"
+                                               name="jumlah"
+                                               class="form-control form-control-sm"
+                                               min="1"
+                                               value="1"
+                                               required>
                                     </td>
                                     <td></td>
                                     <td class="text-center">
@@ -240,25 +281,25 @@
             </div>
 
             @php
-            $adaLayanan = $servis->detail_layanans && $servis->detail_layanans->count() > 0;
-            $adaSparepart = $servis->detail_spareparts && $servis->detail_spareparts->count() > 0;
+                $adaLayanan   = $servis->detail_layanans && $servis->detail_layanans->count() > 0;
+                $adaSparepart = $servis->spareparts && $servis->spareparts->count() > 0;
             @endphp
 
-            {{-- TOMBOL BUAT INVOICE / PESAN PERINGATAN --}}
+            {{-- TOMBOL BUAT INVOICE / WARNING --}}
             @if ($adaLayanan || $adaSparepart)
-            <form action="{{ route('admin.invoices.store') }}" method="POST" class="mt-3">
-                @csrf
-                <input type="hidden" name="servis_id" value="{{ $servis->id }}">
-                <button type="submit" class="btn btn-success">
-                    Buat Invoice
-                </button>
-            </form>
+                <form action="{{ route('admin.invoices.store') }}" method="POST" class="mt-3">
+                    @csrf
+                    <input type="hidden" name="servis_id" value="{{ $servis->id }}">
+                    <button type="submit" class="btn btn-success">
+                        Buat Invoice
+                    </button>
+                </form>
             @else
-            <div class="alert alert-warning mt-3">
-                Tidak dapat membuat invoice karena belum ada layanan atau sparepart
-                yang dipilih pada servis ini. Silakan tambahkan minimal satu layanan
-                atau sparepart terlebih dahulu.
-            </div>
+                <div class="alert alert-warning mt-3">
+                    Tidak dapat membuat invoice karena belum ada layanan atau sparepart
+                    yang dipilih pada servis ini. Silakan tambahkan minimal satu layanan
+                    atau sparepart terlebih dahulu.
+                </div>
             @endif
 
         </div>

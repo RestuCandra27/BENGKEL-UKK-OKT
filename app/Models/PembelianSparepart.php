@@ -18,10 +18,21 @@ class PembelianSparepart extends Model
         'stok_tersisa',
         'harga_beli',
         'harga_jual',
+        'keterangan',
+    ];
+    protected $casts = [
+        'tanggal_masuk' => 'date',
+        'jumlah_masuk'  => 'integer',
+        'harga_beli'    => 'integer',
     ];
 
     public function sparepart()
     {
-        return $this->belongsTo(Sparepart::class, 'sparepart_id');
+        return $this->belongsTo(Sparepart::class);
+    }
+
+    public function getTanggalMasukFormattedAttribute()
+    {
+        return $this->tanggal_masuk?->format('d-m-Y');
     }
 }

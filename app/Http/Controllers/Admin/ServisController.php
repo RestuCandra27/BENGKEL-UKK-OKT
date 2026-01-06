@@ -9,8 +9,9 @@ use App\Models\Kendaraan;
 use App\Models\Layanan;
 use App\Models\PaketServis;
 use App\Models\Sparepart;
-use App\Models\PembelianSparepart;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ServisController extends Controller
 {
@@ -61,7 +62,7 @@ class ServisController extends Controller
             'tanggal_servis' => 'required|date',
         ]);
 
-        Servis::create([
+        $servis = Servis::create([
             'user_id'        => $request->user_id,
             'kendaraan_id'   => $request->kendaraan_id,
             'montir_id'      => $request->montir_id,
@@ -70,6 +71,19 @@ class ServisController extends Controller
             'status_servis'  => 'menunggu',
             'total_biaya'    => 0,
         ]);
+
+        // 🔎 LOG: pendaftaran servis baru
+        ActivityLogger::log(
+            'Pendaftaran servis baru',
+            $servis,
+            [
+                'pelanggan_id'  => $servis->user_id,
+                'kendaraan_id'  => $servis->kendaraan_id,
+                'montir_id'     => $servis->montir_id,
+                'tanggal_servis'=> $servis->tanggal_servis,
+                'status'        => $servis->status_servis,
+            ]
+        );
 
         return redirect()->route('admin.servis.index')
             ->with('success', 'Pendaftaran servis berhasil.');
@@ -85,7 +99,7 @@ class ServisController extends Controller
             'kendaraan',
             'montir',
             'detail_layanans',
-            'detail_spareparts',
+            'spareparts',
         ])->findOrFail($id);
 
         $all_layanans     = Layanan::orderBy('nama_layanan', 'asc')->get();
@@ -101,7 +115,7 @@ class ServisController extends Controller
     }
 
     /** ============================
-     *  UPDATE STATUS SERVIS (menunggu → dikerjakan → selesai → dibayar/dibatalkan)
+     *  UPDATE STATUS SERVIS
      *  ============================ */
     public function update(Request $request, $id)
     {
@@ -112,10 +126,25 @@ class ServisController extends Controller
             'keluhan'       => 'required|string',
         ]);
 
+        $oldStatus  = $servis->status_servis;
+        $oldKeluhan = $servis->keluhan;
+
         $servis->update([
             'status_servis' => $request->status_servis,
             'keluhan'       => $request->keluhan,
         ]);
+
+        // 🔎 LOG: update status servis
+        ActivityLogger::log(
+            'Update status servis',
+            $servis,
+            [
+                'status_lama'  => $oldStatus,
+                'status_baru'  => $servis->status_servis,
+                'keluhan_lama' => $oldKeluhan,
+                'keluhan_baru' => $servis->keluhan,
+            ]
+        );
 
         return redirect()->route('admin.servis.index')
             ->with('success', 'Status servis berhasil diperbarui.');
@@ -126,27 +155,53 @@ class ServisController extends Controller
      *  ============================ */
     public function destroy($id)
     {
-        $servis = Servis::with('detail_spareparts')->findOrFail($id);
+        $servis = Servis::with('spareparts')->findOrFail($id);
 
-        // Kembalikan stok sparepart
-        foreach ($servis->detail_spareparts as $part) {
-            if ($part->pivot->pembelian_sparepart_id) {
-                $batch = PembelianSparepart::find($part->pivot->pembelian_sparepart_id);
-                if ($batch) {
-                    $batch->increment('stok_tersisa', $part->pivot->jumlah_digunakan);
+        DB::transaction(function () use ($servis) {
+
+            $ringkasanSparepart = [];
+
+            // Kembalikan stok semua sparepart yang terpakai
+            foreach ($servis->spareparts as $part) {
+                $jumlah = $part->pivot->jumlah ?? 0;
+                if ($jumlah > 0) {
+                    $part->increaseStock($jumlah);
+
+                    $ringkasanSparepart[] = [
+                        'sparepart_id'   => $part->id,
+                        'nama_sparepart' => $part->nama_sparepart,
+                        'jumlah_dikembalikan' => $jumlah,
+                    ];
                 }
             }
-        }
 
-        // Hapus relasi pivot
-        $servis->detail_layanans()->detach();
-        $servis->detail_spareparts()->detach();
+            // Simpan data untuk log sebelum delete
+            $logData = [
+                'pelanggan_id' => $servis->user_id,
+                'kendaraan_id' => $servis->kendaraan_id,
+                'montir_id'    => $servis->montir_id,
+                'status'       => $servis->status_servis,
+                'total_biaya'  => $servis->total_biaya,
+                'spareparts'   => $ringkasanSparepart,
+            ];
 
-        // Hapus servis
-        $servis->delete();
+            // Hapus relasi pivot
+            $servis->detail_layanans()->detach();
+            $servis->spareparts()->detach();
+
+            // Hapus servis
+            $servis->delete();
+
+            // 🔎 LOG: hapus servis
+            ActivityLogger::log(
+                'Hapus servis (beserta koreksi stok sparepart)',
+                $servis,
+                $logData
+            );
+        });
 
         return redirect()->route('admin.servis.index')
-            ->with('success', 'Data servis berhasil dihapus.');
+            ->with('success', 'Data servis berhasil dihapus dan stok sparepart dikoreksi.');
     }
 
     /** ============================
@@ -154,19 +209,29 @@ class ServisController extends Controller
      *  ============================ */
     public function storeLayanan(Request $request, Servis $servis)
     {
+        $layananBaru = [];
+        $paketDipakai = null;
+
         // Tambah LAYANAN biasa
         if ($request->filled('layanan_id')) {
             $request->validate([
                 'layanan_id' => 'required|exists:layanans,id',
             ]);
 
-            // Cek ke database, hindari duplikat
             $sudahAda = $servis->detail_layanans()
                 ->where('layanans.id', $request->layanan_id)
                 ->exists();
 
             if (! $sudahAda) {
                 $servis->detail_layanans()->attach($request->layanan_id);
+                $layanan = Layanan::find($request->layanan_id);
+
+                $layananBaru[] = [
+                    'layanan_id'    => $layanan->id,
+                    'nama_layanan'  => $layanan->nama_layanan,
+                    'biaya_standar' => $layanan->biaya_standar,
+                    'sumber'        => 'single',
+                ];
             }
         }
 
@@ -177,6 +242,10 @@ class ServisController extends Controller
             ]);
 
             $paket = PaketServis::with('layanans')->findOrFail($request->paket_servis_id);
+            $paketDipakai = [
+                'paket_id'   => $paket->id,
+                'nama_paket' => $paket->nama_paket ?? null,
+            ];
 
             foreach ($paket->layanans as $layan) {
                 $sudahAda = $servis->detail_layanans()
@@ -185,12 +254,32 @@ class ServisController extends Controller
 
                 if (! $sudahAda) {
                     $servis->detail_layanans()->attach($layan->id);
+
+                    $layananBaru[] = [
+                        'layanan_id'    => $layan->id,
+                        'nama_layanan'  => $layan->nama_layanan,
+                        'biaya_standar' => $layan->biaya_standar,
+                        'sumber'        => 'paket',
+                    ];
                 }
             }
         }
 
-        // Hitung ulang total biaya setelah ada perubahan
+        // Hitung ulang total biaya setelah ada perubahan layanan
         $this->hitungTotalBiaya($servis);
+
+        // 🔎 LOG: tambah layanan / paket
+        if (!empty($layananBaru)) {
+            ActivityLogger::log(
+                'Tambah layanan ke servis',
+                $servis,
+                [
+                    'layanan_baru' => $layananBaru,
+                    'paket_dipakai'=> $paketDipakai,
+                    'total_biaya_baru' => $servis->fresh()->total_biaya,
+                ]
+            );
+        }
 
         return back()->with('success', 'Layanan atau paket servis berhasil ditambahkan.');
     }
@@ -200,9 +289,22 @@ class ServisController extends Controller
      *  ============================ */
     public function destroyLayanan(Servis $servis, $layananId)
     {
+        $layanan = Layanan::find($layananId);
+
         $servis->detail_layanans()->detach($layananId);
 
         $this->hitungTotalBiaya($servis);
+
+        // 🔎 LOG: hapus layanan dari servis
+        ActivityLogger::log(
+            'Hapus layanan dari servis',
+            $servis,
+            [
+                'layanan_id'    => $layananId,
+                'nama_layanan'  => $layanan->nama_layanan ?? null,
+                'total_biaya_baru' => $servis->fresh()->total_biaya,
+            ]
+        );
 
         return back()->with('success', 'Layanan berhasil dihapus.');
     }
@@ -212,72 +314,120 @@ class ServisController extends Controller
      *  ============================ */
     public function storeSparepart(Request $request, Servis $servis)
     {
-        $request->validate([
-            'sparepart_id' => 'required|exists:spareparts,id',
-            'jumlah'       => 'required|integer|min:1',
+        $data = $request->validate([
+            'sparepart_id' => ['required', 'exists:spareparts,id'],
+            'jumlah'       => ['required', 'integer', 'min:1'],
         ]);
 
-        // FIFO Stock: ambil batch pembelian terlama yang masih ada stok
-        $batch = PembelianSparepart::where('sparepart_id', $request->sparepart_id)
-            ->where('stok_tersisa', '>', 0)
-            ->orderBy('tanggal_masuk', 'asc')
-            ->first();
+        DB::transaction(function () use ($servis, $data) {
+            // Kunci sparepart supaya stok aman dari race condition
+            $sparepart = Sparepart::lockForUpdate()->findOrFail($data['sparepart_id']);
 
-        if (! $batch) {
-            return back()->with('error', 'Stok sparepart ini habis!');
-        }
+            // Cek stok cukup
+            if ($sparepart->stok < $data['jumlah']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'jumlah' => 'Stok sparepart tidak mencukupi. Sisa stok: ' . $sparepart->stok,
+                ]);
+            }
 
-        if ($batch->stok_tersisa < $request->jumlah) {
-            return back()->with(
-                'error',
-                'Stok pada batch ini tidak cukup. Sisa: ' . $batch->stok_tersisa
+            // Cek apakah sparepart ini sudah pernah ditambahkan ke servis ini
+            $existing = $servis->spareparts()
+                ->where('sparepart_id', $sparepart->id)
+                ->first();
+
+            $mode       = 'baru';
+            $qtyTambah  = $data['jumlah'];
+            $qtyAkhir   = $qtyTambah;
+            $hargaSatuan= $sparepart->harga_jual ?? 0;
+            $subtotal   = 0;
+
+            if ($existing) {
+                // Kalau sudah ada → tambah jumlah
+                $currentQty  = $existing->pivot->jumlah;
+                $qtyAkhir    = $currentQty + $data['jumlah'];
+                $hargaSatuan = $existing->pivot->harga_satuan; // pakai harga yang sama
+                $subtotal    = $qtyAkhir * $hargaSatuan;
+
+                $servis->spareparts()->updateExistingPivot($sparepart->id, [
+                    'jumlah'   => $qtyAkhir,
+                    'subtotal' => $subtotal,
+                ]);
+
+                $mode = 'tambah_qty';
+            } else {
+                // Kalau belum ada → buat baris baru
+                $hargaSatuan = $sparepart->harga_jual ?? 0;
+                $subtotal    = $hargaSatuan * $data['jumlah'];
+
+                $servis->spareparts()->attach($sparepart->id, [
+                    'jumlah'       => $data['jumlah'],
+                    'harga_satuan' => $hargaSatuan,
+                    'subtotal'     => $subtotal,
+                ]);
+            }
+
+            // Kurangi stok sebesar jumlah yang BARU ditambahkan
+            $sparepart->decreaseStock($data['jumlah']);
+
+            // 🔎 LOG: tambah / ubah sparepart di servis
+            ActivityLogger::log(
+                'Tambah sparepart ke servis',
+                $servis,
+                [
+                    'mode'           => $mode,
+                    'sparepart_id'   => $sparepart->id,
+                    'nama_sparepart' => $sparepart->nama_sparepart,
+                    'qty_tambah'     => $qtyTambah,
+                    'qty_akhir'      => $qtyAkhir,
+                    'harga_satuan'   => $hargaSatuan,
+                    'subtotal_baris' => $subtotal,
+                    'stok_sisa'      => $sparepart->stok,
+                ]
             );
-        }
+        });
 
-        // Kurangi stok batch
-        $batch->decrement('stok_tersisa', $request->jumlah);
+        // Hitung ulang total biaya servis
+        $this->hitungTotalBiaya($servis->fresh());
 
-        // Tambahkan ke pivot
-        $servis->detail_spareparts()->attach($request->sparepart_id, [
-            'jumlah_digunakan'       => $request->jumlah,
-            'harga_saat_digunakan'   => $batch->harga_jual,
-            'pembelian_sparepart_id' => $batch->id,
-        ]);
-
-        $this->hitungTotalBiaya($servis);
-
-        return back()->with('success', 'Sparepart berhasil ditambahkan.');
+        return back()->with('success', 'Sparepart berhasil ditambahkan dan stok diperbarui.');
     }
 
     /** ============================
      *  HAPUS SPAREPART
      *  ============================ */
-    public function destroySparepart(Servis $servis, $sparepartId)
+    public function destroySparepart(Servis $servis, Sparepart $sparepart)
     {
-        $data = $servis->detail_spareparts()
-            ->where('sparepart_id', $sparepartId)
-            ->first();
+        DB::transaction(function () use ($servis, $sparepart) {
 
-        if (! $data) {
-            return back()->with('error', 'Data sparepart tidak ditemukan.');
-        }
+            $record = $servis->spareparts()
+                ->where('sparepart_id', $sparepart->id)
+                ->firstOrFail();
 
-        $pivot = $data->pivot;
+            $pivot  = $record->pivot;
+            $jumlah = $pivot->jumlah;
 
-        // Kembalikan stok
-        if ($pivot->pembelian_sparepart_id) {
-            $batch = PembelianSparepart::find($pivot->pembelian_sparepart_id);
-            if ($batch) {
-                $batch->increment('stok_tersisa', $pivot->jumlah_digunakan);
-            }
-        }
+            // Kembalikan stok
+            $sparepart->increment('stok', $jumlah);
 
-        // Hapus pivot
-        $servis->detail_spareparts()->detach($sparepartId);
+            // Lepas dari servis
+            $servis->spareparts()->detach($sparepart->id);
+
+            // 🔎 LOG: hapus sparepart dari servis
+            ActivityLogger::log(
+                'Hapus sparepart dari servis',
+                $servis,
+                [
+                    'sparepart_id'   => $sparepart->id,
+                    'nama_sparepart' => $sparepart->nama_sparepart,
+                    'qty_dihapus'    => $jumlah,
+                    'stok_setelah'   => $sparepart->stok,
+                ]
+            );
+        });
 
         $this->hitungTotalBiaya($servis);
 
-        return back()->with('success', 'Sparepart dihapus & stok dikembalikan.');
+        return back()->with('success', 'Sparepart berhasil dihapus. Stok dikembalikan.');
     }
 
     /** ============================
@@ -285,19 +435,18 @@ class ServisController extends Controller
      *  ============================ */
     private function hitungTotalBiaya(Servis $servis)
     {
-        // Paksa reload relasi dari database supaya data terbaru terbaca
-        $servis->load(['detail_layanans', 'detail_spareparts']);
+        $servis->load(['detail_layanans', 'spareparts']);
 
-        // Total jasa = jumlah biaya_standar semua layanan yang ter-attach
+        // Total jasa: sum biaya_standar semua layanan
         $totalJasa = $servis->detail_layanans->sum('biaya_standar');
 
-        // Total sparepart = sum(jumlah_digunakan * harga_saat_digunakan)
-        $totalPart = 0;
-        foreach ($servis->detail_spareparts as $part) {
-            $totalPart += $part->pivot->jumlah_digunakan * $part->pivot->harga_saat_digunakan;
-        }
+        // Total sparepart: cukup pakai subtotal dari pivot
+        $totalPart = $servis->spareparts->sum(function ($part) {
+            return $part->pivot->subtotal;
+        });
 
-        $servis->total_biaya = $totalJasa + $totalPart;
-        $servis->save();
+        $servis->update([
+            'total_biaya' => $totalJasa + $totalPart,
+        ]);
     }
 }

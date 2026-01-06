@@ -27,12 +27,12 @@
                 @method('PATCH') {{-- Method PATCH untuk update data --}}
 
                 {{-- Input Kode SKU --}}
-                <div class="form-group">
+                <!-- <div class="form-group">
                     <label for="kode_sku">Kode SKU / Part Number</label>
                     {{-- Value diisi dengan data lama (jika ada error) atau data dari database --}}
                     <input type="text" name="kode_sku" class="form-control" value="{{ old('kode_sku', $sparepart->kode_sku) }}">
                     <small class="form-text text-muted">Boleh dikosongkan jika tidak ada.</small>
-                </div>
+                </div> -->
 
                 {{-- Input Nama Sparepart --}}
                 <div class="form-group">
