@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Reset Password - Candra Garage</title>
+    <title>Masukkan Kode OTP - Candra Garage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- FONT --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,44 +37,46 @@
             border: 1px solid var(--border-soft);
             padding: 2rem;
             box-shadow: 0 18px 45px rgba(0,0,0,0.8);
-            max-width: 480px;
+            max-width: 450px;
             width: 100%;
+            text-align: center;
         }
         h2 {
-            margin: 0 0 .5rem;
-            font-size: 1.4rem;
-            text-align: center;
+            margin: 0 0 0.5rem;
+            font-size: 1.5rem;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .subtitle {
-            font-size: 0.85rem;
+        p {
+            font-size: 0.9rem;
             color: var(--text-muted);
-            text-align: center;
             margin-bottom: 2rem;
         }
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
         }
         label {
             display: block;
-            font-size: .8rem;
-            margin-bottom: .3rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
             color: var(--text-main);
         }
-        input {
+        input[type="text"] {
             width: 100%;
             border-radius: .7rem;
             border: 1px solid rgba(55,65,81,0.8);
             background: rgba(15,23,42,0.9);
             color: var(--text-main);
-            padding: .65rem .9rem;
-            font-size: .9rem;
+            padding: .75rem;
+            font-size: 1.2rem;
+            letter-spacing: 0.5rem;
+            text-align: center;
             outline: none;
             transition: all 0.2s;
         }
-        input:focus {
+        input[type="text"]:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 1px rgba(34,211,238,0.45);
         }
@@ -82,76 +84,65 @@
             width: 100%;
             border: none;
             border-radius: .9rem;
-            padding: .7rem 1rem;
-            font-size: .9rem;
+            padding: .75rem 1rem;
+            font-size: .95rem;
             font-weight: 500;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
             color: #020617;
             cursor: pointer;
             box-shadow: 0 0 20px rgba(34,211,238,0.4);
             transition: all .2s ease;
-            margin-top: 1rem;
         }
         .btn-primary:hover {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
             box-shadow: 0 0 30px rgba(34,211,238,0.55);
         }
-        .error {
-            font-size: .75rem;
+        .error-msg {
             color: #fb7185;
-            margin-top: .2rem;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+         .logout-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .logout-link:hover {
+            color: var(--accent);
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Atur Ulang Kata Sandi</h2>
-        <p class="subtitle">Masukkan kode OTP dari email dan kata sandi baru Anda.</p>
+        <h2>Verifikasi OTP</h2>
+        <p>Masukkan 6 digit kode yang dikirim ke email Anda.</p>
 
-        @if (session('status'))
-            <div style="background: rgba(34,211,238,0.15); border: 1px solid var(--accent); color: var(--accent); padding: .75rem; border-radius: .7rem; font-size: .8rem; margin-bottom: 1.5rem; text-align: center;">
-                {{ session('status') }}
-            </div>
-        @endif
-
-        <form method="POST" action="{{ route('password.store') }}">
+        <form method="POST" action="{{ route('otp.verify') }}">
             @csrf
 
-            <!-- Email Address -->
             <div class="form-group">
-                <label for="email">Email</label>
-                <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus>
-                @error('email')
-                    <div class="error">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <!-- OTP Code -->
-            <div class="form-group">
-                <label for="otp_code">Kode OTP (6 Digit)</label>
-                <input id="otp_code" type="text" name="otp_code" maxlength="6" placeholder="000000" style="letter-spacing: 3px; text-align: center;" required>
+                <input type="text" name="otp_code" maxlength="6" placeholder="000000" autofocus required>
                 @error('otp_code')
-                    <div class="error">{{ $message }}</div>
+                    <div class="error-msg">{{ $message }}</div>
                 @enderror
-            </div>
-
-            <!-- Password -->
-            <div class="form-group">
-                <label for="password">Kata Sandi Baru</label>
-                <input id="password" type="password" name="password" required autocomplete="new-password">
-                @error('password')
-                    <div class="error">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="form-group">
-                <label for="password_confirmation">Konfirmasi Kata Sandi Baru</label>
-                <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password">
             </div>
 
             <button type="submit" class="btn-primary">
-                Atur Ulang Password
+                Verifikasi
+            </button>
+        </form>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="logout-link">
+                Keluar / Batal
             </button>
         </form>
     </div>

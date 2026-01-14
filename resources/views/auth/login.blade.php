@@ -276,6 +276,14 @@
                 <p>Masuk menggunakan email dan kata sandi Anda.</p>
             </div>
 
+
+
+            @if (session('success'))
+                <div style="background: rgba(34,211,238,0.15); border: 1px solid var(--accent); color: var(--accent); padding: .75rem; border-radius: .7rem; font-size: .8rem; margin-bottom: 1.2rem;">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('login') }}">
                 @csrf
 
