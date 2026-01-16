@@ -48,23 +48,27 @@ Route::get('/', [LandingController::class, 'index'])
 Route::get('/dashboard', [HomeController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
-// --- Grup Rute HANYA UNTUK ADMIN ---
+// --- GRUP RUTE HANYA UNTUK ADMIN ---
 Route::middleware(['auth', 'verified', 'check.role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
 
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        // DASHBOARD
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('dashboard');
 
-        // MANAJEMEN USER
+        // =========================
+        // MANAJEMEN USER & DATA MASTER
+        // =========================
         Route::resource('/users', UserController::class);
-
-        // DATA MASTER
         Route::resource('/pelanggan', PelangganController::class);
         Route::resource('/layanans', LayananController::class);
+
+        // (Masih ada, nanti di tahap lain akan dihapus)
         Route::resource('/paket-servis', PaketServisController::class);
 
-        // DATA SPAREPART (master)
+        // SPAREPART
         Route::resource('/spareparts', SparepartController::class);
 
         // STOK MASUK
@@ -77,10 +81,12 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])
         Route::delete('/stok-masuk/{pembelianSparepart}', [PembelianSparepartController::class, 'destroy'])
             ->name('stok-masuk.destroy');
 
-        // DATA KENDARAAN
+        // KENDARAAN
         Route::resource('/kendaraans', KendaraanController::class);
 
+        // =========================
         // SERVIS
+        // =========================
         Route::resource('/servis', ServisController::class);
         Route::post('/servis/{servis}/layanan', [ServisController::class, 'storeLayanan'])
             ->name('servis.layanan.store');
@@ -91,7 +97,9 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])
         Route::delete('/servis/{servis}/sparepart/{sparepart}', [ServisController::class, 'destroySparepart'])
             ->name('servis.sparepart.destroy');
 
-        // BOOKING / RESERVASI (ADMIN)
+        // =========================
+        // BOOKING / RESERVASI
+        // =========================
         Route::get('/reservasis', [AdminReservasiController::class, 'index'])
             ->name('reservasis.index');
         Route::get('/reservasis/{reservasi}', [AdminReservasiController::class, 'show'])
@@ -101,34 +109,36 @@ Route::middleware(['auth', 'verified', 'check.role:admin'])
         Route::post('/reservasis/{reservasi}/reject', [AdminReservasiController::class, 'reject'])
             ->name('reservasis.reject');
 
-        // INVOICE (ADMIN)
-        Route::resource('/invoices', InvoiceController::class)->only(['index', 'show', 'store']);
+        // =========================
+        // INVOICE & PEMBAYARAN (ADMIN ONLY - OPSI A)
+        // =========================
 
-        // CETAK NOTA PEMBAYARAN (ADMIN)
+        // Invoice
+        Route::resource('/invoices', InvoiceController::class)
+            ->only(['index', 'show', 'store']);
+
+        // Cetak nota
         Route::get('/invoices/{invoice}/nota', [InvoiceController::class, 'nota'])
             ->name('invoices.nota');
 
-        // KONFIRMASI PEMBAYARAN (ADMIN)
-        Route::post('/payments/{payment}/confirm', [PaymentController::class, 'confirm'])
-            ->name('payments.confirm');
+        // ADMIN INPUT PEMBAYARAN (LANGSUNG LUNAS)
+        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
+            ->name('invoices.payments.store');
 
-        
-
-        // LOG AKTIVITAS
-        Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])
-            ->name('log-aktivitas.index');
-
-                // PEMBAYARAN (ADMIN) - Verifikasi / Tolak
+        // Riwayat pembayaran
         Route::get('/payments', [PaymentController::class, 'index'])
             ->name('payments.index');
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])
             ->name('payments.show');
-        Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])
-            ->name('payments.verify');
-        Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])
-            ->name('payments.reject');
+
+        // =========================
+        // LOG AKTIVITAS
+        // =========================
+        Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])
+            ->name('log-aktivitas.index');
 
     });
+
 
 // --- Grup Rute HANYA UNTUK MONTIR ---
 Route::middleware(['auth', 'verified', 'check.role:montir'])
@@ -164,23 +174,23 @@ Route::middleware(['auth', 'verified', 'check.role:montir'])
     });
 
 // --- Grup Rute HANYA UNTUK KASIR ---
-Route::middleware(['auth', 'verified', 'check.role:kasir'])
-    ->prefix('kasir')
-    ->name('kasir.')
-    ->group(function () {
+// Route::middleware(['auth', 'verified', 'check.role:kasir'])
+//     ->prefix('kasir')
+//     ->name('kasir.')
+//     ->group(function () {
 
-        Route::get('/dashboard', [KasirDashboardController::class, 'index'])
-            ->name('dashboard');
+//         Route::get('/dashboard', [KasirDashboardController::class, 'index'])
+//             ->name('dashboard');
 
-        Route::get('/invoices', [KasirInvoiceController::class, 'index'])
-            ->name('invoices.index');
-        Route::get('/invoices/{invoice}', [KasirInvoiceController::class, 'show'])
-            ->name('invoices.show');
+//         Route::get('/invoices', [KasirInvoiceController::class, 'index'])
+//             ->name('invoices.index');
+//         Route::get('/invoices/{invoice}', [KasirInvoiceController::class, 'show'])
+//             ->name('invoices.show');
 
-        // Hanya kasir yang boleh input pembayaran
-        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
-            ->name('invoices.payments.store');
-    });
+//         // Hanya kasir yang boleh input pembayaran
+//         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
+//             ->name('invoices.payments.store');
+//     });
 
 // --- Grup Rute HANYA UNTUK PELANGGAN ---
 Route::middleware(['auth', 'verified', 'check.role:pelanggan'])

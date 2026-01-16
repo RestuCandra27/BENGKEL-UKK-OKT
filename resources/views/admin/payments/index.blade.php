@@ -2,18 +2,12 @@
     <x-slot name="header">
         <div class="d-flex justify-content-between align-items-center">
             <h2 class="mb-0" style="color:#e5e7eb;">
-                Verifikasi Pembayaran
+                Riwayat Pembayaran
             </h2>
 
-            <form method="GET" action="{{ route('admin.payments.index') }}" class="d-flex align-items-center">
-                <select name="status" class="form-control form-control-sm mr-2"
-                        onchange="this.form.submit()">
-                    <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="confirmed" {{ $status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                    <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                    <option value="all" {{ $status === 'all' ? 'selected' : '' }}>Semua</option>
-                </select>
-            </form>
+            <span class="text-muted">
+                Daftar seluruh pembayaran yang telah dicatat oleh admin
+            </span>
         </div>
     </x-slot>
 
@@ -46,13 +40,9 @@
                             <td>{{ $p->metode_bayar }}</td>
                             <td>Rp {{ number_format($p->jumlah_bayar, 0, ',', '.') }}</td>
                             <td>
-                                @if ($p->status === 'pending')
-                                    <span class="badge badge-warning">Pending</span>
-                                @elseif ($p->status === 'confirmed')
-                                    <span class="badge badge-success">Confirmed</span>
-                                @else
-                                    <span class="badge badge-danger">Rejected</span>
-                                @endif
+                                <span class="badge badge-success">
+                                    Lunas
+                                </span>
                             </td>
                             <td>{{ $p->tanggal_bayar }}</td>
                             <td>

@@ -6,32 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
     /**
-     * LIST PEMBAYARAN (ADMIN / KASIR)
+     * RIWAYAT PEMBAYARAN (ADMIN)
      */
-    public function index(Request $request)
+    public function index()
     {
-        $status = $request->get('status', 'pending'); // default: hanya pending
+        $payments = Payment::with(['invoice.pelanggan'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
-        $query = Payment::with(['invoice.pelanggan'])
-            ->orderBy('created_at', 'desc');
-
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
-
-        $payments = $query->paginate(10);
-
-        return view('admin.payments.index', compact('payments', 'status'));
+        return view('admin.payments.index', compact('payments'));
     }
 
     /**
-     * DETAIL SATU PEMBAYARAN
+     * DETAIL PEMBAYARAN (READ ONLY)
      */
     public function show(Payment $payment)
     {
@@ -41,140 +32,66 @@ class PaymentController extends Controller
     }
 
     /**
-     * INPUT PEMBAYARAN OLEH KASIR (langsung terkonfirmasi)
-     * route: kasir.invoices.payments.store
+     * INPUT PEMBAYARAN OLEH ADMIN
+     * - Bisa DP
+     * - Tidak bisa melebihi sisa tagihan
+     * - Tidak bisa input jika sudah lunas
      */
     public function store(Request $request, Invoice $invoice)
     {
+        // ===== HITUNG REAL-TIME =====
+        $totalBayar  = $invoice->payments()
+            ->where('status', 'confirmed')
+            ->sum('jumlah_bayar');
+
+        $sisaTagihan = max($invoice->total_tagihan - $totalBayar, 0);
+
+        // ❌ Jika sudah lunas, tolak
+        if ($sisaTagihan <= 0) {
+            return back()->with('error', 'Invoice ini sudah lunas. Tidak dapat menambahkan pembayaran.');
+        }
+
+        // ===== VALIDASI (ANTI BYPASS) =====
         $request->validate([
             'metode_bayar'  => 'required|string|max:50',
-            'jumlah_bayar'  => 'required|numeric|min:1000',
-            'tanggal_bayar' => 'nullable|date',
+            'tanggal_bayar' => 'required|date|after_or_equal:today',
+            'jumlah_bayar'  => [
+                'required',
+                'numeric',
+                'min:1000',
+                'max:' . $sisaTagihan, // ⬅️ KUNCI DP AMAN
+            ],
             'catatan'       => 'nullable|string|max:500',
         ]);
 
-        $tanggal = $request->tanggal_bayar
-            ? $request->tanggal_bayar
-            : now()->toDateString();
-
-        $payment = Payment::create([
-            'invoice_id'    => $invoice->id,
-            'pelanggan_id'  => $invoice->user_id,
-            'metode_bayar'  => $request->metode_bayar,
-            'jumlah_bayar'  => $request->jumlah_bayar,
-            'tanggal_bayar' => $tanggal,
-            'status'        => 'confirmed', // kasir sudah terima uang
-            'catatan'       => $request->catatan,
-        ]);
-
-        // sinkron status invoice
-        $this->syncInvoiceStatus($invoice);
-
-        return back()->with('success', 'Pembayaran berhasil dicatat oleh kasir.');
-    }
-
-    /**
-     * INPUT PEMBAYARAN OLEH PELANGGAN (mandiri, status pending)
-     * route: pelanggan.invoices.payments.store
-     */
-    public function storeFromCustomer(Request $request, Invoice $invoice)
-    {
-        $request->validate([
-            'metode_bayar' => 'required|string|max:50',
-            'jumlah_bayar' => 'required|numeric|min:1000',
-            'bukti_bayar'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'catatan'      => 'nullable|string|max:500',
-        ]);
-
-        $buktiPath = null;
-        if ($request->hasFile('bukti_bayar')) {
-            $buktiPath = $request->file('bukti_bayar')
-                ->store('bukti_pembayaran', 'public');
-        }
-
+        // ===== SIMPAN PEMBAYARAN =====
         Payment::create([
             'invoice_id'    => $invoice->id,
             'pelanggan_id'  => $invoice->user_id,
             'metode_bayar'  => $request->metode_bayar,
             'jumlah_bayar'  => $request->jumlah_bayar,
-            'tanggal_bayar' => now()->toDateString(),
-            'status'        => 'pending',         // menunggu dicek admin/kasir
-            'bukti_path'    => $buktiPath,
+            'tanggal_bayar' => $request->tanggal_bayar,
+            'status'        => 'confirmed', // ADMIN = LANGSUNG SAH
             'catatan'       => $request->catatan,
         ]);
 
-        return back()->with('success', 'Pembayaran berhasil dikirim. Menunggu verifikasi admin/kasir.');
+        // ===== SINKRON STATUS INVOICE =====
+        $this->syncInvoiceStatus($invoice);
+
+        return back()->with('success', 'Pembayaran berhasil dicatat.');
     }
 
     /**
-     * VERIFIKASI (SETUJU) PEMBAYARAN OLEH ADMIN/KASIR
-     * route: admin.payments.verify
-     */
-    public function verify(Request $request, Payment $payment)
-    {
-        if ($payment->status === 'confirmed') {
-            return back()->with('success', 'Pembayaran ini sudah pernah diverifikasi.');
-        }
-
-        $request->validate([
-            'catatan_admin' => 'nullable|string|max:500',
-        ]);
-
-        $payment->status        = 'confirmed';
-        $payment->catatan_admin = $request->catatan_admin;
-        $payment->verified_by   = Auth::id();
-        $payment->verified_at   = now();
-        $payment->save();
-
-        $this->syncInvoiceStatus($payment->invoice);
-
-        return redirect()
-            ->route('admin.payments.show', $payment->id)
-            ->with('success', 'Pembayaran telah diverifikasi.');
-    }
-
-    /**
-     * TOLAK PEMBAYARAN
-     * route: admin.payments.reject
-     */
-    public function reject(Request $request, Payment $payment)
-    {
-        if ($payment->status === 'rejected') {
-            return back()->with('success', 'Pembayaran ini sudah pernah ditolak.');
-        }
-
-        $request->validate([
-            'catatan_admin' => 'required|string|max:500',
-        ]);
-
-        $payment->status        = 'rejected';
-        $payment->catatan_admin = $request->catatan_admin;
-        $payment->verified_by   = Auth::id();
-        $payment->verified_at   = now();
-        $payment->save();
-
-        // kalau ditolak, tetap sinkron (mungkin semua payment confirmed=0)
-        $this->syncInvoiceStatus($payment->invoice);
-
-        return redirect()
-            ->route('admin.payments.show', $payment->id)
-            ->with('success', 'Pembayaran telah ditolak.');
-    }
-
-    /**
-     * Helper: update status_pembayaran pada invoice
+     * Helper: Sinkron status invoice
      */
     protected function syncInvoiceStatus(Invoice $invoice)
     {
-        // hanya hitung payment yang confirmed
         $totalConfirmed = $invoice->payments()
             ->where('status', 'confirmed')
             ->sum('jumlah_bayar');
 
         if ($totalConfirmed >= $invoice->total_tagihan) {
             $invoice->status_pembayaran = 'Lunas';
-        } elseif ($totalConfirmed > 0) {
-            $invoice->status_pembayaran = 'Belum Lunas'; // bisa juga diubah ke 'DP'
         } else {
             $invoice->status_pembayaran = 'Belum Lunas';
         }
